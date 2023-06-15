@@ -26,18 +26,25 @@ a:visited {
 }
 
 label {
-	display: block;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-top: auto;
+    margin-bottom: auto;
+    gap: 10px;
 }
 
 input, button, select, textarea {
-	font-family: inherit;
-	font-size: inherit;
-	-webkit-padding: 0.4em 0;
-	padding: 0.4em;
-	margin: 0 0 0.5em 0;
-	box-sizing: border-box;
-	border: 1px solid #ccc;
-	border-radius: 2px;
+    font-family: inherit;
+    font-size: inherit;
+    -webkit-padding: 0.4em 0;
+    padding: 0.4em;
+    /* margin: 0 0 0.5em 0; */
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 input:disabled {
@@ -64,25 +71,36 @@ button:focus {
 .container {
     margin: 50px;
     display: flex;
-    flex-direction: column;
+    /* flex-direction: column; */
     gap: 20px;
+    /* position: fixed; */
+}
+.sinistra {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: 100px;
+}
+.destra {
+    margin-left: 150px;
+    width: 100%;
+    /* margin-right: 50px; */
 }
 
 .font {
     padding: 5px;
-	background-color: darkseagreen;
+    display: flex;
+    background-color: #7cafd1;
+    flex-direction: column;
+    gap: 10px;
 }
 .style {
-    background-color: blanchedalmond;
+    background-color: #8acddb;
     padding: 5px;
 }
-label {
-    margin-top: auto;
-    margin-bottom: auto;
-}
-input[type="text"] {
-    margin: 10px;
-}
+
+
 form.elements {
     display: flex;
     flex-direction: column;
@@ -90,10 +108,153 @@ form.elements {
 }
 .colonna-element {
     background-color: beige;
-    padding: 30px;
+    /* padding: 30px; */
+    width: 100%;
+    padding: 5px;
+    /* margin-right: 0px; */
 }
 .element {
     display: flex;
     gap: 20px;
     margin-bottom: 10px;
+    
+    justify-content: space-between;
+    padding: 5px;
+    background-color: aliceblue;
+}
+.fontsize {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    background-color: #b1d6dd;
+    /* height: 100%; */
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.tipo {
+    /* margin: 0px; */
+    margin-bottom: auto;
+    margin-top: auto;
+}
+button {
+    color: #333;
+    background-color: #f4f4f4;
+    outline: none;
+    margin: 10px;
+}
+.larghezza {
+    display: flex;
+    flex-direction: column;
+    background: #acb9ff;
+    padding: 5px;
+}
+input#\31 {
+    width: 50px;
+}
+.tabella-element {
+    display: flex;
+    flex-direction: column;
+    background: #d4e7e1;
+    padding: 5px;
+    gap: 5px;
+}
+.layout {
+    background: #dffbff;
+}
+
+label.label2 {
+    margin-right: 50%;
+    margin-left: 0%;
+    justify-content: space-between;
+}
+.element-campi {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.element-riga {
+    background: #b8bcb9;
+    padding: 5px;
+    gap: 10px;
+    display: flex;
+    flex-direction: column;
+}
+.list-element {
+    background: #eff5df;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+}
+.ordine {
+    margin: 5px;
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+}
+.stile_colore {
+    display: grid;
+    /* justify-content: space-between; */
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    /* gap: 50%; */
+}
+.colore {
+    display: flex;
+    flex-direction: column;
+    background: #efe1ac;
+    padding: 5px;
+}
+label.label3 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-right: 20%;
+}
+.stileNumeri {
+    /* margin: 5px; */
+    background: #f7d2b6;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 5px;
+    margin-top: 10px;
+}
+.contenutolista {
+    margin-top: 10px;
+    background: #e39576;
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+}
+label.label4 {
+    display: flex;
+    gap: 30px;
+}
+input[type="color"] {
+    padding: 0px;
+}
+.element-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    align-items: center;
+    flex-direction: column;
+}
+select#style-select {
+    width: 100px;
+}
+input[type="number"] {
+    width: 100px;
+}
+
+.style-margin {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+.cont-allignment {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
 }

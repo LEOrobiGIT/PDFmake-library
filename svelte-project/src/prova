@@ -1,0 +1,13 @@
+let fieldbase = {type: 'field',elemento:{id:0, content: '', selectedfont:'', selectedfontsize: '', selectedstyle: '', bold : '', italics :'', pagebreak: ''}};
+let columnbase ={type :"column",elemento:{id: 1, fields: [] }};
+let campo = {type : "campo",id : 3,testo:[],larghezza_colonne :[], colspan:[], numero: 1,altezza_riga : "auto"};
+let contenuto_campi ={type : "contenuto_campi",id : 4,testo:[],altezza_riga : "auto"};
+let table ={type : 'table', elemento:{id: 2, layout: '', style:'', color:'', cont_campi:{}, contenuto_t:[campo,contenuto_campi] }};
+let list = {type: 'list', elemento : {id:5, tipo:"", start : 1, style: "", color: "", markerColor: "", pointer : "", testo :[]}};
+let header = {type : 'header', elemento : {id : 6, testo : '', alignment : '', style : '', margin :{left: 0, top: 0,  right: 0, bottom: 0}}};
+let footer = {type : 'footer', elemento : {id : 7, testo : '', alignment : '', style : '', margin :{left: 0, top: 0,  right: 0, bottom: 0}}};
+let contenuto =[header,footer,fieldbase,columnbase,table,list];
+let style = {nome : '', font : '', fontsize: '', bold : '', italics : '',alignment: '', lineheight : 1, color :'', background : ''};
+let styles = [];
+let nextId = 8; // id for the next field/column to be added
+const dd = { content: [], header: {text: "", alignment: "", style: "", margin: []}, footer : {text: "", alignment: "", style: "", margin: []}, styles: { /* styles configuration */ } };
