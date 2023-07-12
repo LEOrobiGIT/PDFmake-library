@@ -9,8 +9,9 @@
     import PDFPreview from './PDFPreview.svelte';
     import fileList from '../src/fileList.json';
     import { name } from 'pdfmake/build/pdfmake';
-
+    import { ddStore } from './PDFstore.js';
     let generatedPdfData;
+    export let fileListpassed;
   //------------------FONTS-----------------------------
     pdfMake.fonts = {
       NotoSerif: {
@@ -41,7 +42,8 @@
 
   //-----------------------------------------------------
     let pdfData = null;
-    var dd = {}
+    let dd = {};
+    ddStore.set(dd);
     pdfMake.createPdf(dd).getDataUrl((dataUrl) => {
       pdfData = dataUrl;
     });
@@ -391,11 +393,20 @@
         }
       }else{
         //generatedPdfData = pdfMake.createPdf(dd).getDataUrl;
-        pdfMake.createPdf(dd).print();
+        //pdfMake.createPdf(dd).print();
+        ddStore.set(dd);
+
+        const unsubscribe = ddStore.subscribe((value) => {
+          console.log('Stored value in PDFstore:', value);
+        });
+        onDestroy(() => {
+          unsubscribe();
+        });
+
         contenuto =[...contenuto];
       }
       }
-
+      
 
   //------------------Field--------------------------------------------------------------
 
@@ -661,7 +672,6 @@
   //---------------Footer------------------------------------------
     const checkFooterAndExecute = () => {
       const hasFooter = contenuto.some(item => item.type === 'footer');
-      console.log(hasFooter);
 
       if (hasFooter) {
         ChangeFontsizeonMarginFooter();
@@ -1501,10 +1511,10 @@
     cells = document.querySelectorAll('.cella');
     dropzonesText = document.querySelectorAll('.dropzone_Text');
     fileButtons = document.querySelectorAll('.fileButton');
-    console.log("dropzones = "+dropzones);
-    console.log("dropzonesText = "+dropzonesText);
-    console.log("buttons = "+buttons);
-    console.log("fileButtons = "+fileButtons);
+    //console.log("dropzones = "+dropzones);
+    //console.log("dropzonesText = "+dropzonesText);
+    //console.log("buttons = "+buttons);
+    //console.log("fileButtons = "+fileButtons);
     dropzones.forEach(dropzone => {
       dropzone.addEventListener('dragenter', handleDragEnter);
       dropzone.addEventListener('dragleave', handleDragLeave);
@@ -2272,6 +2282,7 @@
                         </div>   
                           <div class="element">  
                             <div class = "contenuto_field">
+                              <!-- svelte-ignore a11y-label-has-associated-control -->
                               <label> 
                                 <p>Contenuto: </p><small-grey> (shift + invio per andare a capo)</small-grey>
                               </label>
@@ -2992,7 +3003,7 @@
      </div>
     <div class="preview">
       <!--<div class="resize-handle" onmousedown={handleMouseDown} onmouseup={handleMouseUp}></div>-->
-      <iframe id="fixedElement" src="{pdfData}" frameborder="0" width=100% height=100%></iframe>
+      <iframe title = "pdf-window" id="fixedElement" src="{pdfData}" frameborder="0" width=100% height=100%></iframe>
     </div>    
     </div>
     </main>

@@ -1,0 +1,14 @@
+Per richiamare l'app svelte :
+    import PDFmakerApp from './path/to/PDFmakerApp-app';
+    import { ddStore } from './path/to/app/pdfStore.js';
+
+    //definire in una lista l'insieme dei file da far leggere in una variabile fileListpassed = [file1,file2]
+    let fileListpassed = [file1,file2];
+    let dd;
+    <PDFmakerApp fileListpassed={fileListpassed} bind:dd={dd} />
+    const unsubscribe = ddStore.subscribe(value => {
+        dd = value;
+    });
+    onDestroy(() => {
+    unsubscribe();
+    });
