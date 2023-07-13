@@ -1,17 +1,16 @@
 
-
 <script> 
-    import { onMount, onDestroy } from 'svelte';
-    import { afterUpdate, tick } from 'svelte';
-    import pdfMake from 'pdfmake/build/pdfmake';
-    import pdfFonts from "pdfmake/build/vfs_fonts"; 
-    pdfMake.vfs = pdfFonts;
-    import PDFPreview from './PDFPreview.svelte';
-    import fileList from '../src/fileList.json';
-    import { name } from 'pdfmake/build/pdfmake';
-    import { ddStore } from './PDFstore.js';
-    let generatedPdfData;
-    export let fileListpassed;
+  import { onMount, onDestroy } from 'svelte';
+  import { afterUpdate, tick } from 'svelte';
+  import pdfMake from 'pdfmake/build/pdfmake';
+  import pdfFonts from "../public/vfs_fonts";
+  //import pdfFonts from "pdfmake/build/vfs_fonts"; 
+  pdfMake.vfs = pdfFonts;
+  import PDFPreview from './PDFPreview.svelte';
+  import fileList from '../src/fileList.json';
+  import { ddStore } from './PDFstore.js';
+  let generatedPdfData;
+  export let fileListpassed;
   //------------------FONTS-----------------------------
     pdfMake.fonts = {
       NotoSerif: {
@@ -32,22 +31,28 @@
         italics: "Raleway-Italic.ttf",
         bolditalics: "Raleway-BoldItalic.ttf",
       },
-      Roboto: {
+      RobotoSerif: {
         normal: "RobotoSerif-Regular.ttf",
         bold: "RobotoSerif-Bold.ttf",
         italics: "RobotoSerif-Italic.ttf",
         bolditalics: "RobotoSerif-BoldItalic.ttf",
+      },
+      Roboto: {
+        normal: "Roboto-Regular.ttf",
+        bold: "Roboto-Bold.ttf",
+        italics: "Roboto-Italic.ttf",
+        bolditalics: "Roboto-BoldItalic.ttf",
       }
     };
 
-  //-----------------------------------------------------
+  //-------------------inizializzazione doc definition ----------------------------------
     let pdfData = null;
     let dd = {};
     ddStore.set(dd);
     pdfMake.createPdf(dd).getDataUrl((dataUrl) => {
       pdfData = dataUrl;
     });
-//----------------------------------------------
+  //------------------Struttura del contenuto ----------------------------
     let fieldbase = {type: 'field',elemento:{id:0, content: '', selectedfont:'', selectedfontsize: '', selectedstyle: '', selectedbold : '', selecteditalics :'', pagebreak: ''}};
     let columnbase ={type :"column",elemento:{id: 1, gap: 10, fields: [], alignment: "" }};
     let campo = {type : "campo",id : 3,testo:[],larghezza_colonne :[], fillcolor : [], numero: 1, altezza_riga : "auto", borders:{left:[false],top:[false],right:[false],bottom:[false]}, alignments: [], colspan : []};
@@ -63,6 +68,7 @@
     let contenuto =[pagina];
     let style = {nome : '', font : '', fontsize: '', bold : '', italics : '',alignment: '', lineheight : 1, color :'', background : ''};
     let nextId = 2; // id for the next field/column to be added
+  //------------ Dichiarazione degli stili--------------------------
 	  let custom_styles = {
       header : {fontSize : 18,bold : true}, 
       subheader : {fontSize : 15, bold: true}, 
@@ -408,7 +414,7 @@
       }
       
 
-  //------------------Field--------------------------------------------------------------
+  //------------------Field(testo)--------------------------------------------------------------
 
     function addField(i) {
       const field = {
@@ -1397,423 +1403,394 @@
     function handleInput(event) {
       adjustTextareaHeight(event);
     }
-  /*
-    window.addEventListener('resize', function() {
-      // Get the fixed element
-      var fixedElement = document.getElementById('fixedElement');
-      
-      // Update the position based on the new window size
-      var newTop = window.innerHeight / 2 - fixedElement.offsetHeight / 2;
-      fixedElement.style.top = newTop + 'px';
-     
+
+  /* //---------------------------------iframe-resize----------------------
+    let iframeWidth = 400;
+    let iframeHeight = 300;
+    let mouseX = 0;
+    let mouseY = 0;
+    let isDragging = false;
+
+    function handleMouseDown(event) {
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+      isDragging = true;
+    }
+
+    function handleMouseUp() {
+      isDragging = false;
+    }
+
+    function handleMouseMove(event) {
+      if (!isDragging) return;
+
+      const dx = event.clientX - mouseX;
+      const dy = event.clientY - mouseY;
+      iframeWidth += dx;
+      iframeHeight += dy;
+
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+    }
+
+    onMount(() => {
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('mousemove', handleMouseMove);
     });
-  */
- /* //---------------------------------iframe-resize----------------------
-  let iframeWidth = 400;
-  let iframeHeight = 300;
-  let mouseX = 0;
-  let mouseY = 0;
-  let isDragging = false;
 
-  function handleMouseDown(event) {
-    mouseX = event.clientX;
-    mouseY = event.clientY;
-    isDragging = true;
-  }
-
-  function handleMouseUp() {
-    isDragging = false;
-  }
-
-  function handleMouseMove(event) {
-    if (!isDragging) return;
-
-    const dx = event.clientX - mouseX;
-    const dy = event.clientY - mouseY;
-    iframeWidth += dx;
-    iframeHeight += dy;
-
-    mouseX = event.clientX;
-    mouseY = event.clientY;
-  }
-
-  onMount(() => {
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('mousemove', handleMouseMove);
-  });
-
-  onDestroy(() => {
-    window.removeEventListener('mouseup', handleMouseUp);
-    window.removeEventListener('mousemove', handleMouseMove);
-  });
+    onDestroy(() => {
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+    });
     */
 
-//----------------------non funziona--------------------
- /* afterUpdate(async () => {
-    await tick();
-    const lastElement = document.querySelector('.cella:last-child');
-    if (lastElement) {
-      lastElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  });
-  $: {
-    // Get the last added element
-    const lastElement = contenuto[contenuto.length - 1];
 
-    if (lastElement) {
-      // Scroll to the last added element
-      lastElement.elemento.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
+  /*//--------------------SelectedtoBold&italics----------------
+    function applyBold(textareaId) {
+      event.preventDefault();
+      var textarea = document.getElementById(textareaId);
+      var start = textarea.selectionStart;
+      var end = textarea.selectionEnd;
+      var selectedText = textarea.value.substring(start, end);
+      console.log("textarea = "+textarea+"start= "+"selectedText = "+selectedText);
+
+      if (selectedText.length > 0) {
+          var boldText = '<b>' + selectedText + '</b>';
+          var modifiedText = textarea.value.substring(0, start) + boldText + textarea.value.substring(end);
+          textarea.value = modifiedText;
+          textarea.setSelectionRange(start, start + boldText.length);
+      }
+    }*/
+  //-------------Drag&Drop------------------------------------
+    let objects = [
+      { el: null, id: 'header', label: 'Header' },
+      { el: null, id: 'footer', label: 'Footer' },
+      { el: null, id: 'toc', label: 'Indice' },
+      { el: null, id: 'text', label: 'Testo' },
+      { el: null, id: 'row', label: 'Riga Vuota' },
+      { el: null, id: 'column', label: 'Colonna' },
+      { el: null, id: 'table', label: 'Tabella' },
+      { el: null, id: 'list', label: 'Lista' },
+      { el: null, id: 'svg', label: 'SVG' },
+      { el: null, id: 'image', label: 'Immagine' }
+    ]; //bottoni per l'aggiunta degli elementi
+
+    var buttons = [];
+    var fileButtons = [];
+    var dropzones = [];
+    var dropzonesText = [];
+    var cells = [];
+    let selectedFileContent = "";
+
+    onMount(() => {
+      buttons = document.querySelectorAll('.addButton');
+      dropzones = document.querySelectorAll('.dropzone');
+      cells = document.querySelectorAll('.cella');
+      dropzonesText = document.querySelectorAll('.dropzone_Text');
+      fileButtons = document.querySelectorAll('.fileButton');
+      //console.log("dropzones = "+dropzones);
+      //console.log("dropzonesText = "+dropzonesText);
+      //console.log("buttons = "+buttons);
+      //console.log("fileButtons = "+fileButtons);
+      dropzones.forEach(dropzone => {
+        dropzone.addEventListener('dragenter', handleDragEnter);
+        dropzone.addEventListener('dragleave', handleDragLeave);
       });
-    }
-  }*/
-//--------------------SelectedtoBold&italics----------------
-  function applyBold(textareaId) {
-    event.preventDefault();
-    var textarea = document.getElementById(textareaId);
-    var start = textarea.selectionStart;
-    var end = textarea.selectionEnd;
-    var selectedText = textarea.value.substring(start, end);
-    console.log("textarea = "+textarea+"start= "+"selectedText = "+selectedText);
-
-    if (selectedText.length > 0) {
-        var boldText = '<b>' + selectedText + '</b>';
-        var modifiedText = textarea.value.substring(0, start) + boldText + textarea.value.substring(end);
-        textarea.value = modifiedText;
-        textarea.setSelectionRange(start, start + boldText.length);
-    }
-  }
-//-------------Drag&Drop------------------------------------
-  let objects = [
-    { el: null, id: 'header', label: 'Header' },
-    { el: null, id: 'footer', label: 'Footer' },
-    { el: null, id: 'toc', label: 'Indice' },
-    { el: null, id: 'text', label: 'Testo' },
-    { el: null, id: 'row', label: 'Riga Vuota' },
-    { el: null, id: 'column', label: 'Colonna' },
-    { el: null, id: 'table', label: 'Tabella' },
-    { el: null, id: 'list', label: 'Lista' },
-    { el: null, id: 'svg', label: 'SVG' },
-    { el: null, id: 'image', label: 'Immagine' }
-  ];
-
-  var buttons = [];
-  var fileButtons = [];
-  var dropzones = [];
-  var dropzonesText = [];
-  var cells = [];
-  let selectedFileContent = "";
-
-  onMount(() => {
-    buttons = document.querySelectorAll('.addButton');
-    dropzones = document.querySelectorAll('.dropzone');
-    cells = document.querySelectorAll('.cella');
-    dropzonesText = document.querySelectorAll('.dropzone_Text');
-    fileButtons = document.querySelectorAll('.fileButton');
-    //console.log("dropzones = "+dropzones);
-    //console.log("dropzonesText = "+dropzonesText);
-    //console.log("buttons = "+buttons);
-    //console.log("fileButtons = "+fileButtons);
-    dropzones.forEach(dropzone => {
-      dropzone.addEventListener('dragenter', handleDragEnter);
-      dropzone.addEventListener('dragleave', handleDragLeave);
+      buttons.forEach(button => {
+        button.addEventListener('dragstart', handleDragStart);
+        button.addEventListener('dragend', handleDragEnd);
+      });
     });
+
+    // Add event listeners for dragstart and dragend events
     buttons.forEach(button => {
       button.addEventListener('dragstart', handleDragStart);
       button.addEventListener('dragend', handleDragEnd);
     });
-  });
+    dropzones.forEach((dropzone, i) => {
+      //dropzone.addEventListener('dragenter', (event) => handleDragEnter(event, i));
+      //dropzone.addEventListener('dragleave', (event) => handleDragLeave(event, i));
+      dropzone.addEventListener('dragend',  (event) => handleDragEnd(event, i));
+    });
+    dropzonesText.forEach((dropzone, i) => {
+      
+    });
+    function handleDrop(event,i) {
+      event.preventDefault();
+      const dropZone = event.currentTarget;
+      console.log(dropZone);
+      console.log(i);
+      const droppedElementId = event.dataTransfer.getData('text/plain');
 
-  // Add event listeners for dragstart and dragend events
-  buttons.forEach(button => {
-    button.addEventListener('dragstart', handleDragStart);
-    button.addEventListener('dragend', handleDragEnd);
-  });
-  dropzones.forEach((dropzone, i) => {
-    //dropzone.addEventListener('dragenter', (event) => handleDragEnter(event, i));
-    //dropzone.addEventListener('dragleave', (event) => handleDragLeave(event, i));
-    dropzone.addEventListener('dragend',  (event) => handleDragEnd(event, i));
-  });
-  dropzonesText.forEach((dropzone, i) => {
-    
-  });
-  function handleDrop(event,i) {
-    event.preventDefault();
-    const dropZone = event.currentTarget;
-    console.log(dropZone);
-    console.log(i);
-    const droppedElementId = event.dataTransfer.getData('text/plain');
-
-    // Find the corresponding object based on the id
-    const droppedObject = objects.find((obj) => obj.id === droppedElementId);
-    const isLowerDropZone = dropZone.classList.contains("dropzone") && dropZone.classList.contains("lower-dropzone") && dropZone.classList.contains("drag-over");
-    // Create a new element based on the dropped object's label
-    switch (droppedObject.label) {
-      case 'Header':
-        if (isLowerDropZone){
-          addHeader(i+1);
-          isHeaderPresent = true;
-        }else{
-          addHeader(i);
-          isHeaderPresent = true;
-        }
-        break;
-      case 'Footer':
-        if (isLowerDropZone){
-          addFooter(i+1);
-          isFooterPresent = true;
-        }else{
-          addFooter(i);
-          isFooterPresent = true;
-        }
-        break;
-      case 'Indice':
-        if (isLowerDropZone){
-          addTOC(i+1);
-        }else{
-          addTOC(i);
-        }
-        break;
-      case 'Testo':
-      if (isLowerDropZone){
-        addField(i+1);
-      }else{
-        addField(i);
-      }
-      break;
-      case 'Colonna':
-        if (isLowerDropZone){
-          addColumn(i+1);
-        }else{
-          addColumn(i);
-        }
-        break;
-      case 'Tabella':
-        if (isLowerDropZone){
-          addTable(i+1);
-        }else{
-          addTable(i);
-        }
-        break;
-      case 'Lista':
-        if (isLowerDropZone){
-          addList(i+1);
-        }else{
-          addList(i);
-        }
-        break;
-      case 'SVG':
-        if (isLowerDropZone){
-          addSVG(i+1);
-        }else{
-          addSVG(i);
-        }
-        break;
-      case 'Riga Vuota':
-        if (isLowerDropZone){
-          addRow(i+1);
-        }else{
-          addRow(i);
-        }
-        break;
-      case 'Immagine':
-       if (isLowerDropZone){
-          addIMG(i+1);
-        }else{
-          addIMG(i);
-        }
-        break;
-      default:
-        // Handle unknown object label
-        break;
-    }
-    if (isHeaderPresent) {
-      document.getElementById('header').disabled = true;
-    } ;
-    if (isFooterPresent){
-      document.getElementById('footer').disabled = true;
-    };
-    // Push the new element into the `contenuto` array
-
-    // Update the component state or trigger a re-render
-    // to reflect the changes in the `contenuto` array
-    console.log("---------------------------");
-    console.log(contenuto);
-    contenuto = [...contenuto];
-    event.target.classList.remove('drag-over');
-    console.log(dropzones);
-    contenuto = [...contenuto];
-  }
-  function handleDropFile(event,id,id_sec) {
-    event.preventDefault();
-    for (var i = 0; i < contenuto.length; i++) {
-      var item = contenuto[i];
-      console.log("id = "+id);
-      if (item.type != "page" && item.elemento.id === id){
-        if(item.type === "field"){
-          item.elemento.content = selectedFileContent;
-        }if(item.type === "column"){
-          console.log(item.elemento);
-          for (var x = 0; x < item.elemento.fields.length; x++){
-            var field = item.elemento.fields[x];
-            console.log(field);
-            if(field.id === id_sec){
-              field.content = selectedFileContent;
-            }
+      // Find the corresponding object based on the id
+      const droppedObject = objects.find((obj) => obj.id === droppedElementId);
+      const isLowerDropZone = dropZone.classList.contains("dropzone") && dropZone.classList.contains("lower-dropzone") && dropZone.classList.contains("drag-over");
+      // Create a new element based on the dropped object's label
+      switch (droppedObject.label) {
+        case 'Header':
+          if (isLowerDropZone){
+            addHeader(i+1);
+            isHeaderPresent = true;
+          }else{
+            addHeader(i);
+            isHeaderPresent = true;
           }
+          break;
+        case 'Footer':
+          if (isLowerDropZone){
+            addFooter(i+1);
+            isFooterPresent = true;
+          }else{
+            addFooter(i);
+            isFooterPresent = true;
+          }
+          break;
+        case 'Indice':
+          if (isLowerDropZone){
+            addTOC(i+1);
+          }else{
+            addTOC(i);
+          }
+          break;
+        case 'Testo':
+        if (isLowerDropZone){
+          addField(i+1);
         }else{
-          item.elemento.testo = selectedFileContent;
+          addField(i);
+        }
+        break;
+        case 'Colonna':
+          if (isLowerDropZone){
+            addColumn(i+1);
+          }else{
+            addColumn(i);
+          }
+          break;
+        case 'Tabella':
+          if (isLowerDropZone){
+            addTable(i+1);
+          }else{
+            addTable(i);
+          }
+          break;
+        case 'Lista':
+          if (isLowerDropZone){
+            addList(i+1);
+          }else{
+            addList(i);
+          }
+          break;
+        case 'SVG':
+          if (isLowerDropZone){
+            addSVG(i+1);
+          }else{
+            addSVG(i);
+          }
+          break;
+        case 'Riga Vuota':
+          if (isLowerDropZone){
+            addRow(i+1);
+          }else{
+            addRow(i);
+          }
+          break;
+        case 'Immagine':
+        if (isLowerDropZone){
+            addIMG(i+1);
+          }else{
+            addIMG(i);
+          }
+          break;
+        default:
+          // Handle unknown object label
+          break;
+      }
+      if (isHeaderPresent) {
+        document.getElementById('header').disabled = true;
+      } ;
+      if (isFooterPresent){
+        document.getElementById('footer').disabled = true;
+      };
+      // Push the new element into the `contenuto` array
+
+      // Update the component state or trigger a re-render
+      // to reflect the changes in the `contenuto` array
+      console.log("---------------------------");
+      console.log(contenuto);
+      contenuto = [...contenuto];
+      event.target.classList.remove('drag-over');
+      console.log(dropzones);
+      contenuto = [...contenuto];
+    }
+    function handleDropFile(event,id,id_sec) {
+      event.preventDefault();
+      for (var i = 0; i < contenuto.length; i++) {
+        var item = contenuto[i];
+        console.log("id = "+id);
+        if (item.type != "page" && item.elemento.id === id){
+          if(item.type === "field"){
+            item.elemento.content = selectedFileContent;
+          }if(item.type === "column"){
+            console.log(item.elemento);
+            for (var x = 0; x < item.elemento.fields.length; x++){
+              var field = item.elemento.fields[x];
+              console.log(field);
+              if(field.id === id_sec){
+                field.content = selectedFileContent;
+              }
+            }
+          }else{
+            item.elemento.testo = selectedFileContent;
+          }
         }
       }
+      console.log(contenuto);
+      contenuto = [...contenuto];
     }
-    console.log(contenuto);
-    contenuto = [...contenuto];
-  }
-  function handleDropAdd(event,i) {
-    event.preventDefault();
-    const dropZone = event.currentTarget;
-    console.log(dropZone);
-    console.log(i);
-    const droppedElementId = event.dataTransfer.getData('text/plain');
+    function handleDropAdd(event,i) {
+      event.preventDefault();
+      const dropZone = event.currentTarget;
+      console.log(dropZone);
+      console.log(i);
+      const droppedElementId = event.dataTransfer.getData('text/plain');
 
-    // Find the corresponding object based on the id
-    const droppedObject = objects.find((obj) => obj.id === droppedElementId);
-    const isLowerDropZone = dropZone.classList.contains("dropzone") && dropZone.classList.contains("lower-dropzone") && dropZone.classList.contains("drag-over");
-    // Create a new element based on the dropped object's label
-    switch (droppedObject.label) {
-      case 'Colonna':
-        addColumntoEl(i);
-        break;
-      case 'Tabella':
-        addTabletoEl(i);
-        break;
-      case 'Lista':
-        addListtoEl(i);
-        break;
-      case 'SVG':
-        addSVGtoEl(i);
-        break;
-      case 'Immagine':
-        addIMGtoEl(i);
-        break;
-      default:
-        break;
-    }
-    console.log("---------------------------");
-    console.log(contenuto);
-    contenuto = [...contenuto];
-    event.target.classList.remove('drag-over');
-    console.log(dropzones);
-    contenuto = [...contenuto];
-  }
-  function handleDragEnter(event,i) {
-    console.log("ciao");
-    event.preventDefault();
-    // Add any necessary styling or visual indication for the drop zone
-    event.target.classList.add('drag-over');
-    cells.forEach(cell => {
-      cell.classList.add('disable-clicks');
-    });
-  }
-  function handleDragEnterText(event) {
-    console.log("ciao");
-    event.preventDefault();
-    // Add any necessary styling or visual indication for the drop zone
-    event.target.classList.add('drag-over');
-  }
-  function handleDragEnterAdd(event,i) {
-    console.log(event.target);
-    event.preventDefault();
-    // Add any necessary styling or visual indication for the drop zone
-    event.target.classList.add('drag-over');
-  }
-  function handleDragOver(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }
-  function handleDragOverAdd(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }
-  function handleDragOverText(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }
-
-  function handleDragLeave(event) {
-    event.preventDefault();
-    // Remove any styling or visual indication from the drop zone
-    event.target.classList.remove('drag-over');
-    cells.forEach(cell => {
-      cell.classList.remove('disable-clicks');
-    });
-    /*dropzones.forEach(dropzone => {
-      dropzone.style.pointerEvents = '';
-    });*/
-  }
-  function handleDragLeaveText(event) {
-    event.preventDefault();
-    // Remove any styling or visual indication from the drop zone
-    event.target.classList.remove('drag-over');
-    /*dropzones.forEach(dropzone => {
-      dropzone.style.pointerEvents = '';
-    });*/
-  }
-  function handleDragLeaveAdd(event) {
-    event.preventDefault();
-    // Remove any styling or visual indication from the drop zone
-    event.target.classList.remove('drag-over');
-    cells.forEach(cell => {
-      cell.classList.remove('disable-clicks');
-    });
-    /*dropzones.forEach(dropzone => {
-      dropzone.style.pointerEvents = '';
-    });*/
-  }
-  function handleDragStart(event,i) {
-    buttons = document.querySelectorAll('.addButton');
-    dropzones = document.querySelectorAll('.dropzone');
-    cells = document.querySelectorAll('.cella');
-    event.dataTransfer.setData('text/plain', event.target.id);
-    dropzones.forEach(dropzone => {
-      dropzone.style.pointerEvents = 'auto';
-    });
-  }
-  function handleDragStartFile(event) {
-    for (let i = 0; i < fileList.length; i++) {
-      const file = fileList[i];
-      if (file.name.trim() === event.currentTarget.textContent.trim()) {
-        console.log("ok");
-        selectedFileContent = file.name;        
-        break;
+      // Find the corresponding object based on the id
+      const droppedObject = objects.find((obj) => obj.id === droppedElementId);
+      const isLowerDropZone = dropZone.classList.contains("dropzone") && dropZone.classList.contains("lower-dropzone") && dropZone.classList.contains("drag-over");
+      // Create a new element based on the dropped object's label
+      switch (droppedObject.label) {
+        case 'Colonna':
+          addColumntoEl(i);
+          break;
+        case 'Tabella':
+          addTabletoEl(i);
+          break;
+        case 'Lista':
+          addListtoEl(i);
+          break;
+        case 'SVG':
+          addSVGtoEl(i);
+          break;
+        case 'Immagine':
+          addIMGtoEl(i);
+          break;
+        default:
+          break;
       }
+      console.log("---------------------------");
+      console.log(contenuto);
+      contenuto = [...contenuto];
+      event.target.classList.remove('drag-over');
+      console.log(dropzones);
+      contenuto = [...contenuto];
     }
-    dropzones = document.querySelectorAll('.dropzone');
-    dropzonesText = document.querySelectorAll('.dropzone_Text');
-    event.dataTransfer.setData('text/plain', event.target.id);
-    dropzonesText.forEach(dropzone => {
-      dropzone.style.pointerEvents = 'auto';
-    });
-    dropzones.forEach(dropzone => {
-      dropzone.style.pointerEvents = '';
-    });
-  }
-  function handleDragEnd() {
-    dropzones.forEach(dropzone => {
-      dropzone.style.pointerEvents = '';
-      dropzone.classList.remove('drag-over'); // Remove the 'drag-over' class
-    });
-    cells.forEach(cell => {
-      cell.classList.remove('disable-clicks');
-    });
-  }
-  function handleDragEndFile() {
-    dropzonesText.forEach(dropzone => {
-      dropzone.style.pointerEvents = '';
-      dropzone.classList.remove('drag-over'); // Remove the 'drag-over' class
-    });
-  }
+    function handleDragEnter(event,i) {
+      console.log("ciao");
+      event.preventDefault();
+      // Add any necessary styling or visual indication for the drop zone
+      event.target.classList.add('drag-over');
+      cells.forEach(cell => {
+        cell.classList.add('disable-clicks');
+      });
+    }
+    function handleDragEnterText(event) {
+      console.log("ciao");
+      event.preventDefault();
+      // Add any necessary styling or visual indication for the drop zone
+      event.target.classList.add('drag-over');
+    }
+    function handleDragEnterAdd(event,i) {
+      console.log(event.target);
+      event.preventDefault();
+      // Add any necessary styling or visual indication for the drop zone
+      event.target.classList.add('drag-over');
+    }
+    function handleDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    }
+    function handleDragOverAdd(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    }
+    function handleDragOverText(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDragLeave(event) {
+      event.preventDefault();
+      // Remove any styling or visual indication from the drop zone
+      event.target.classList.remove('drag-over');
+      cells.forEach(cell => {
+        cell.classList.remove('disable-clicks');
+      });
+      /*dropzones.forEach(dropzone => {
+        dropzone.style.pointerEvents = '';
+      });*/
+    }
+    function handleDragLeaveText(event) {
+      event.preventDefault();
+      // Remove any styling or visual indication from the drop zone
+      event.target.classList.remove('drag-over');
+      /*dropzones.forEach(dropzone => {
+        dropzone.style.pointerEvents = '';
+      });*/
+    }
+    function handleDragLeaveAdd(event) {
+      event.preventDefault();
+      // Remove any styling or visual indication from the drop zone
+      event.target.classList.remove('drag-over');
+      cells.forEach(cell => {
+        cell.classList.remove('disable-clicks');
+      });
+      /*dropzones.forEach(dropzone => {
+        dropzone.style.pointerEvents = '';
+      });*/
+    }
+    function handleDragStart(event,i) {
+      buttons = document.querySelectorAll('.addButton');
+      dropzones = document.querySelectorAll('.dropzone');
+      cells = document.querySelectorAll('.cella');
+      event.dataTransfer.setData('text/plain', event.target.id);
+      dropzones.forEach(dropzone => {
+        dropzone.style.pointerEvents = 'auto';
+      });
+    }
+    function handleDragStartFile(event) {
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        if (file.name.trim() === event.currentTarget.textContent.trim()) {
+          console.log("ok");
+          selectedFileContent = file.name;        
+          break;
+        }
+      }
+      dropzones = document.querySelectorAll('.dropzone');
+      dropzonesText = document.querySelectorAll('.dropzone_Text');
+      event.dataTransfer.setData('text/plain', event.target.id);
+      dropzonesText.forEach(dropzone => {
+        dropzone.style.pointerEvents = 'auto';
+      });
+      dropzones.forEach(dropzone => {
+        dropzone.style.pointerEvents = '';
+      });
+    }
+    function handleDragEnd() {
+      dropzones.forEach(dropzone => {
+        dropzone.style.pointerEvents = '';
+        dropzone.classList.remove('drag-over'); // Remove the 'drag-over' class
+      });
+      cells.forEach(cell => {
+        cell.classList.remove('disable-clicks');
+      });
+    }
+    function handleDragEndFile() {
+      dropzonesText.forEach(dropzone => {
+        dropzone.style.pointerEvents = '';
+        dropzone.classList.remove('drag-over'); // Remove the 'drag-over' class
+      });
+    }
 
 
 </script>
@@ -1826,18 +1803,6 @@
       </div>
     <div class="container">
       <div class = "sinistra">
-        <!--<div class = "cont_sinistra" id = "fixedElement2">
-          <h1> Aggiungi : </h1>
-          <button type="button" on:click={addHeader}>Header</button>
-          <button type="button" on:click={addFooter}>Footer</button>
-          <button type="button" on:click={addTOC}>Indice</button>
-          <button type="button" on:click={addField}>Testo</button>
-          <button type="button" on:click={addColumn}>Colonna</button>
-          <button type="button" on:click={addTable}>Tabella</button>
-          <button type="button" on:click={addList}>Lista</button>
-          <button type="button" on:click={addSVG}>SVG</button>
-          <button type="button" on:click={addIMG}>Immagine</button>
-        </div>-->
         <div class="cont_sinistra" id="fixedElement2">
           <h1 class="responsive-heading">Aggiungi:</h1>
           {#each objects as { el, id, label }}
@@ -1914,7 +1879,7 @@
                     <label> 
                       <p>Contenuto Header: </p>
                     <textarea class="autosize-textarea dropzone_Text"   on:drop={(e) => handleDropFile(e,item.elemento.id,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={item.elemento.testo} on:input={handleInput} on:input:resize={adjustTextareaHeight} id={`textareaHeader-${i}`} /> 
-                    <button class = "boldconverter" on:click={() => applyBold(`textareaHeader-${i}`)}>Bold</button>
+                    <!--<button class = "boldconverter" on:click={() => applyBold(`textareaHeader-${i}`)}>Bold</button>-->
                     </label>
                     <p>Alignment: </p>
                     <label> 
@@ -1950,6 +1915,7 @@
                         <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
                             <option value="">Seleziona</option>
                             <option value="Roboto">Roboto</option>
+                            <option value="RobotoSerif">RobotoSerif</option>
                             <option value="Raleway">Raleway</option>
                             <option value="NotoSerif">NotoSerif</option>
                             <option value="Montserrat">Montserrat</option>
@@ -2063,6 +2029,7 @@
                         <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
                             <option value="">Seleziona</option>
                             <option value="Roboto">Roboto</option>
+                            <option value="RobotoSerif">RobotoSerif</option>
                             <option value="Raleway">Raleway</option>
                             <option value="NotoSerif">NotoSerif</option>
                             <option value="Montserrat">Montserrat</option>
@@ -2185,6 +2152,7 @@
                           <select id="font" bind:value={item.elemento.selectedfont}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
                               <option value="">Seleziona</option>
                               <option value="Roboto">Roboto</option>
+                              <option value="RobotoSerif">RobotoSerif</option>
                               <option value="Raleway">Raleway</option>
                               <option value="NotoSerif">NotoSerif</option>
 							                <option value="Montserrat">Montserrat</option>
@@ -2336,6 +2304,7 @@
                                 <select id="font" bind:value={field.selectedfont}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
                                   <option value="">Seleziona</option>
                                   <option value="Roboto">Roboto</option>
+                                  <option value="RobotoSerif">RobotoSerif</option>
                                   <option value="Raleway">Raleway</option>
                                   <option value="NotoSerif">NotoSerif</option>
                                   <option value="Montserrat">Montserrat</option>
@@ -2463,6 +2432,7 @@
                       <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
                           <option value="">Seleziona</option>
                           <option value="Roboto">Roboto</option>
+                          <option value="RobotoSerif">RobotoSerif</option>
                           <option value="Raleway">Raleway</option>
                           <option value="NotoSerif">NotoSerif</option>
                           <option value="Montserrat">Montserrat</option>
@@ -2941,6 +2911,7 @@
                           <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
                             <option value="">Seleziona</option>
                             <option value="Roboto">Roboto</option>
+                            <option value="RobotoSerif">RobotoSerif</option>
                             <option value="Raleway">Raleway</option>
                             <option value="NotoSerif">NotoSerif</option>
                             <option value="Montserrat">Montserrat</option>
