@@ -163,7 +163,8 @@ form.elements {
 }
 .tipo\&page {
     display: grid;
-    grid-template-columns: 20% 80%;
+    grid-template-columns: 20% 70%;
+    gap: 10%;
 }
 .style\&fontsize {
     display: flex;
@@ -219,6 +220,8 @@ p {
     /* margin: 0px; */
     margin-bottom: auto;
     margin-top: auto;
+    display: flex;
+    justify-content: space-between;
 }
 .pbreak {
     display: grid;
@@ -239,6 +242,10 @@ button {
     /* padding: 5px; */
     grid-template-columns: 30% 25% 35%;
     justify-content: space-between;
+}
+.altezza {
+    display: flex;
+    gap: 20%;
 }
 small-grey {
     color: #a5a5a5;
@@ -476,8 +483,8 @@ button.aggiungi-riga {
     background: #a9a9a975;
     margin: 0px;
 }
-.rimuovi-riga{
-    margin: 0px;
+.rimuovi-riga {
+    margin: 10px;
 }
 .height\&remove {
     display: flex;
@@ -819,7 +826,8 @@ input.table_cell {
     grid-template-columns: 80% 20%;
 }
 .content\&addriga {
-    
+    grid-template-columns: 80% 20%;
+    display: grid;
 }
 .settings {
     border: 1px #b8b8b8 solid;

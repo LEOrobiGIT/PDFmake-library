@@ -4,7 +4,6 @@
   import { afterUpdate, tick } from 'svelte';
   import pdfMake from 'pdfmake/build/pdfmake';
   import pdfFonts from "../public/vfs_fonts";
-  import { fly } from 'svelte/transition';
   //import pdfFonts from "pdfmake/build/vfs_fonts"; 
   pdfMake.vfs = pdfFonts;
   import PDFPreview from './PDFPreview.svelte';
@@ -3355,6 +3354,7 @@
                       </div>
                         {#if field.settings[0] != -1 && field.settings[2] === "campo"}
                           <div class = "settings">
+                            Dettagli
                             <div class= "larghezza">
                               <label>
                                 <input id={"auto" + field.id} type="radio" bind:group={field.larghezza_colonne[indice_settings]} value="auto" on:change={HandleChangeLarghezzaColonna(event, field.id, indice_settings)}/>
@@ -3410,8 +3410,10 @@
                           <input class ="table_cell" type= "text" on:click = {(e) => addSettings(e,item.elemento.id,field.id,index)} on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,index)} on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={field.testo[index]} />
                           {/each}
                         </div> 
+                        <button class = "rimuovi-riga" type="button" on:click={() => removeRiga(item.elemento.id,field.id)}>Rimuovi Riga</button>   
                         {#if item.elemento.contenuto_t[0].settings[0] != -1 && item.elemento.contenuto_t[0].settings[2] === "contenuto_campi" && item.elemento.contenuto_t[0].settings[1] === field.id}
-                        <div class = "settings" transition:fly="{{ y: -100, duration: 600 }}">
+                        <div class = "settings" >
+                          Dettagli:
                           <div class = "span&color">
                             <label class = "label"> 
                               Celle del campo: 
@@ -3448,11 +3450,10 @@
                           </div>
                         </div>
                         {/if}
-                      </div>                
+                      </div>             
                       {/if}
                   {/each}
                   <button  class = "aggiungi-riga" type="button" on:click={() => addRiga(item.elemento.id)}>Aggiungi Riga</button>    
-                  <button class = "rimuovi-riga" type="button" on:click={() => removeRiga(item.elemento.id,field.id)}>Rimuovi Riga</button>
                 </div>
                 <div class="dropzone upper-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
                 <div class="dropzone lower-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
@@ -3831,8 +3832,8 @@
     <div class="preview">
       <!--<div class="resize-handle" onmousedown={handleMouseDown} onmouseup={handleMouseUp}></div>-->
       <iframe title = "pdf-window" id="fixedElement" src="{pdfData}" frameborder="0" width=100% height=100%></iframe>
-      <button class = "send" value = "invia" type="submit">Invia</button>
-      <button class = "preview" value = "preview" type="submit">Preview</button>
+      <!--<button class = "send" value = "invia" type="submit">Invia</button>
+      <button class = "preview" value = "preview" type="submit">Preview</button>-->
     </div>    
     </div>
     </main>
