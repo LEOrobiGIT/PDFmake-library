@@ -4,6 +4,7 @@
   import { afterUpdate, tick } from 'svelte';
   import pdfMake from 'pdfmake/build/pdfmake';
   import pdfFonts from "../public/vfs_fonts";
+  import { fly } from 'svelte/transition';
   //import pdfFonts from "pdfmake/build/vfs_fonts"; 
   pdfMake.vfs = pdfFonts;
   import PDFPreview from './PDFPreview.svelte';
@@ -86,11 +87,13 @@
       checkHeaderAndExecute;
       console.log(contenuto);
       var dd = {};
+      var dd_preview = {};
       var pageMargins = contenuto[0].pageMargins;
       if (pageMargins.length === 0){
         pageMargins = [40,40,40,40];
       }
       dd = {pageMargins: pageMargins, content: [], header: {text: "", alignment: "", style: "", fontSize: "", font: "", margin: []}, footer : {text: "", alignment: "", style: "",fontSize: "", font: "", margin: []}, styles: custom_styles};
+      dd_preview = {pageMargins: pageMargins, content: [], header: {text: "", alignment: "", style: "", fontSize: "", font: "", margin: []}, footer : {text: "", alignment: "", style: "",fontSize: "", font: "", margin: []}, styles: custom_styles};
       contenuto.forEach(item => {
         if (item.type === 'field') {
           var testo = item.elemento.content;
@@ -100,8 +103,20 @@
           const style = item.elemento.selectedstyle || 'normal';
           const pagebreak = item.elemento.pagebreak;
           const tocItem = item.elemento.tocItem;
+          const test_text = item.elemento.test_text || "40";
+          var text_generated = generateText(test_text.toString()); 
           dd.content.push({
             text: testo,
+            fontSize: fontSize,
+            style: style,
+            font: font,
+            bold: item.elemento.selectedbold,
+            italics: item.elemento.selecteditalics,
+            pageBreak : pagebreak,
+            tocItem : tocItem
+          });
+          dd_preview.content.push({
+            text: text_generated,
             fontSize: fontSize,
             style: style,
             font: font,
@@ -120,29 +135,129 @@
           const alignment = item.alignment;
           console.log(campi);
           const ris = [];
+          const ris_preview = []
           campi.forEach(field => {
-            const width = field.width;
-            const contenuto = field.content;
-            const font = field.selectedfont || 'Roboto';
-            const fontSize = field.selectedfontsize || 12;
-            const style = field.selectedstyle || 'normal';
-            ris.push({
-                width: width,
-                text: contenuto,
-                fontSize: fontSize,
-                style: style,
-                font: font,
-                bold: item.elemento.bold,
-                italics: item.elemento.italics,
-            });
+            if (field.type === "field"){
+              const width = field.width;
+              const contenuto = field.content;
+              const font = field.selectedfont || 'Roboto';
+              const fontSize = field.selectedfontsize || 12;
+              const style = field.selectedstyle || 'normal';
+              const test_text = field.test_text || "4";
+              var text_generated = generateText(test_text.toString()); 
+              ris.push({
+                  width: width,
+                  text: contenuto,
+                  fontSize: fontSize,
+                  style: style,
+                  font: font,
+                  bold: item.elemento.bold,
+                  italics: item.elemento.italics,
+              });
+              ris_preview.push({
+                  width: width,
+                  text: text_generated,
+                  fontSize: fontSize,
+                  style: style,
+                  font: font,
+                  bold: item.elemento.bold,
+                  italics: item.elemento.italics,
+              });
+            } else if (field.type === "IMG"){
+              const imgContent = field.imgContent;
+              const test_img = field.test_img;
+              const larghezza = field.larghezza;
+              const altezza = field.altezza;
+              const larghezza_fit = field.larghezza_fit;
+              const altezza_fit = field.altezza_fit;
+              const alignment = field.alignment;
+              const imgMargins = field.imgMargins;
+              const isMaxDimensionsSelected = field.isMaxDimensionsSelected;
+              if (isMaxDimensionsSelected === "true"){
+                ris.push({
+                  image: imgContent,
+                  fit : [larghezza_fit,altezza_fit],
+                  alignment : alignment,
+                  margin : imgMargins
+                });
+                ris_preview.push({
+                  image: test_img,
+                  fit : [larghezza_fit,altezza_fit],
+                  alignment : alignment,
+                  margin : imgMargins
+                });
+              }else{
+                ris.push({
+                  image: imgContent,
+                  width:larghezza,
+                  height: altezza,
+                  alignment : alignment,
+                  margin : imgMargins
+                });
+                ris_preview.push({
+                  image: test_img,
+                  width:larghezza,
+                  height: altezza,
+                  alignment : alignment,
+                  margin : imgMargins
+                });
+              }
+            }else if (field.type === "SVG"){
+              const imgContent = field.imgContent;
+              const test_img = field.test_img;
+              const larghezza = field.larghezza;
+              const altezza = field.altezza;
+              const larghezza_fit = field.larghezza_fit;
+              const altezza_fit = field.altezza_fit;
+              const alignment = field.alignment;
+              const imgMargins = field.imgMargins;
+              const isMaxDimensionsSelected = field.isMaxDimensionsSelected;
+              if (isMaxDimensionsSelected === "true"){
+                ris.push({
+                  svg: imgContent,
+                  fit : [larghezza_fit,altezza_fit],
+                  alignment : alignment,
+                  margin : imgMargins
+                });
+                ris_preview.push({
+                  svg: test_img,
+                  fit : [larghezza_fit,altezza_fit],
+                  alignment : alignment,
+                  margin : imgMargins
+                });
+              }else{
+                ris.push({
+                  svg: imgContent,
+                  width:larghezza,
+                  height: altezza,
+                  alignment : alignment,
+                  margin : imgMargins
+                });
+                ris_preview.push({
+                  svg: test_img,
+                  width:larghezza,
+                  height: altezza,
+                  alignment : alignment,
+                  margin : imgMargins
+                });
+              }
+            }
+
           });
           dd.content.push({
             columns: ris,
             columnGap: gap,
             alignment : alignment
           });
+          dd_preview.content.push({
+            columns: ris_preview,
+            columnGap: gap,
+            alignment : alignment
+          });
+          console.log(dd_preview);
         } else if (item.type === 'table') {
           const body_table =[];
+          const body_table_preview = [];
           const layout = item.elemento.layout || '';
           const color = item.elemento.color || '#444'
           const contenuto_t = item.elemento.contenuto_t || '';
@@ -153,18 +268,22 @@
           const italics = item.elemento.italics;
           const altezze = [];
           const larghezza = [];
+          var numero;
           contenuto_t.forEach(el =>{
-            console.log("el");
             console.log(el);
             var riga = [];
+            var riga_preview = [];
             if (el.type === "campo"){
               if (el.tipoaltezza_riga === "auto"){
                 altezze.push(el.tipoaltezza_riga);
               }else{
                 altezze.push(el.altezza_riga);
               };
+              numero = el.numero;
               for (let i = 0; i < el.numero; i++){
                 var testo = el.testo[i] || "";
+                const test_text = el.test_text[i] || "4";
+                var text_generated = generateText(test_text.toString()); 
                 console.log(el.larghezza_colonne[i]);
                 if (!el.larghezza_colonne[i]){
                   el.larghezza_colonne[i] = "auto"
@@ -178,12 +297,20 @@
                 borders.push(el.borders.bottom[i]);
                 var alignment = el.alignments[i];
                 var colspan = el.colspan[i] || 1;
+                
                 riga.push({
                   border : borders,
                   fillColor: fill_color,
                   alignment : alignment,
                   colSpan: colspan,
                   text : testo,
+                });
+                riga_preview.push({
+                  border : borders,
+                  fillColor: fill_color,
+                  alignment : alignment,
+                  colSpan: colspan,
+                  text : text_generated,
                 });
               }
             } else if (el.type === "contenuto_campi") {
@@ -192,8 +319,11 @@
               }else{
                 altezze.push(el.altezza_riga);
               };
-              for (let i = 0; i < el.testo.length; i++){
+              for (let i = 0; i < numero; i++){
                 var testo = el.testo[i]|| "";
+                const test_text = el.test_text[i] || "8";
+                var text_generated = generateText(test_text.toString());
+                console.log(text_generated);
                 var fill_color = el.fillcolor[i];
                 var borders = [];
                 borders.push(el.borders.left[i]);
@@ -209,11 +339,19 @@
                   colSpan: colspan,
                   text : testo,
                 });
+                riga_preview.push({
+                  border : borders,
+                  fillColor: fill_color,
+                  alignment : alignment,
+                  colSpan: colspan,
+                  text : text_generated,
+                });
                 console.log("riga");
                 console.log(riga);
               } 
             }
             body_table.push(riga);
+            body_table_preview.push(riga_preview);
           });
           dd.content.push({
             layout: layout,
@@ -222,6 +360,20 @@
               heights: altezze,
 				      widths: larghezza,
 				      body: body_table
+			      },
+            fontSize: fontsize,
+            font: font,
+            pageBreak : pagebreak,
+            bold: bold,
+            italics: italics
+          });
+          dd_preview.content.push({
+            layout: layout,
+            color: color,
+			      table: {
+              heights: altezze,
+				      widths: larghezza,
+				      body: body_table_preview
 			      },
             fontSize: fontsize,
             font: font,
@@ -238,8 +390,12 @@
           const markercolor = item.elemento.markerColor;
           const pointer = item.elemento.pointer;
           const lista = [];
+          const lista_preview = [];
           item.elemento.testo.forEach(el=>{
             lista.push(el.content);
+            const test_text = el.test_text || "4";
+            var text_generated = generateText(test_text.toString()); 
+            lista_preview.push(text_generated);
           });
           if (tipo === "ul"){
             dd.content.push({
@@ -248,6 +404,13 @@
               markerColor : markercolor,
               type : pointer,
               ul:lista
+            });
+            dd_preview.content.push({
+              style: style,
+              color : color,
+              markerColor : markercolor,
+              type : pointer,
+              ul:lista_preview
             })
           }else {
             dd.content.push({
@@ -257,23 +420,42 @@
               markerColor : markercolor,
               type : pointer,
               ol:lista
+            });
+            dd_preview.content.push({
+              start : start,
+              style: style,
+              color : color,
+              markerColor : markercolor,
+              type : pointer,
+              ol:lista_preview
             })
           }
         } else if (item.type === 'header'){
           const testo = item.elemento.testo;
+          const test_text = item.elemento.test_text || "4";
+          var text_generated = generateText(test_text.toString()); 
           const alignment = item.elemento.alignment;
           const style = item.elemento.style;
           var font = item.elemento.font;
           var fontsize = item.elemento.fontsize;
           const margin = [];
+          const margin_preview = [];
           margin.push(item.elemento.margin.left);
           margin.push(item.elemento.margin.top);
           margin.push(item.elemento.margin.right);
           margin.push(item.elemento.margin.bottom);
+          margin_preview.push(item.elemento.margin.left);
+          margin_preview.push(item.elemento.margin.top);
+          margin_preview.push(item.elemento.margin.right);
+          margin_preview.push(item.elemento.margin.bottom);
           dd.header.text = testo;
           dd.header.alignment = alignment;
           dd.header.style = style;
           dd.header.margin = margin;
+          dd_preview.header.text = text_generated;
+          dd_preview.header.alignment = alignment;
+          dd_preview.header.style = style;
+          dd_preview.header.margin = margin_preview;
           if (font === ""){
             font = "Roboto";
           }
@@ -282,21 +464,34 @@
           }
           dd.header.font = font;
           dd.header.fontSize = fontsize;
+          dd_preview.header.font = font;
+          dd_preview.header.fontSize = fontsize;
         } else if (item.type === 'footer'){
           const testo = item.elemento.testo;
+          const test_text = item.elemento.test_text || "4";
+          var text_generated = generateText(test_text.toString()); 
           const alignment = item.elemento.alignment;
           const style = item.elemento.style;
           const margin = [];
+          const margin_preview = [];
           var font = item.elemento.font;
           var fontsize = item.elemento.fontsize;
           margin.push(item.elemento.margin.left);
           margin.push(item.elemento.margin.top);
           margin.push(item.elemento.margin.right);
           margin.push(item.elemento.margin.bottom);
+          margin_preview.push(item.elemento.margin.left);
+          margin_preview.push(item.elemento.margin.top);
+          margin_preview.push(item.elemento.margin.right);
+          margin_preview.push(item.elemento.margin.bottom);
           dd.footer.text = testo;
           dd.footer.alignment = alignment;
           dd.footer.style = style;
           dd.footer.margin = margin;
+          dd_preview.footer.text = text_generated;
+          dd_preview.footer.alignment = alignment;
+          dd_preview.footer.style = style;
+          dd_preview.footer.margin = margin_preview;
           if (font === ""){
             font = "Roboto";
           }
@@ -305,8 +500,11 @@
           }
           dd.footer.font = font;
           dd.footer.fontSize = fontsize;
+          dd_preview.footer.font = font;
+          dd_preview.footer.fontSize = fontsize;
         } else if (item.type === 'svg'){
           const svgContent = item.elemento.svgContent;
+          const test_svg = item.elemento.test_svg;
           const larghezza = item.elemento.larghezza;
           const altezza = item.elemento.altezza;
           const larghezza_fit = item.elemento.larghezza_fit;
@@ -315,15 +513,30 @@
           const svgMargins = item.elemento.svgMargins;
           const isMaxDimensionsSelected = item.elemento.isMaxDimensionsSelected;
           if (isMaxDimensionsSelected === "true"){
+            console.log("ok");
             dd.content.push({
               svg: svgContent,
               fit : [larghezza_fit,altezza_fit],
               alignment : alignment,
               margin : svgMargins
             });
+            dd_preview.content.push({
+              svg: test_svg,
+              fit : [larghezza_fit,altezza_fit],
+              alignment : alignment,
+              margin : svgMargins
+            });
           }else{
+            console.log("ok2");
             dd.content.push({
               svg: svgContent,
+              width:larghezza,
+              height: altezza,
+              alignment : alignment,
+              margin : svgMargins
+            });
+            dd.content.push({
+              svg: test_svg,
               width:larghezza,
               height: altezza,
               alignment : alignment,
@@ -332,6 +545,7 @@
           }
         } else if (item.type === 'img'){
           const imgContent = item.elemento.imgContent;
+          const test_img = item.elemento.test_img;
           const larghezza = item.elemento.larghezza;
           const altezza = item.elemento.altezza;
           const larghezza_fit = item.elemento.larghezza_fit;
@@ -346,9 +560,22 @@
               alignment : alignment,
               margin : imgMargins
             });
+            dd_preview.content.push({
+              image: test_img,
+              fit : [larghezza_fit,altezza_fit],
+              alignment : alignment,
+              margin : imgMargins
+            });
           }else{
             dd.content.push({
               image: imgContent,
+              width:larghezza,
+              height: altezza,
+              alignment : alignment,
+              margin : imgMargins
+            });
+            dd_preview.content.push({
+              image: test_img,
               width:larghezza,
               height: altezza,
               alignment : alignment,
@@ -360,10 +587,12 @@
           const style = item.elemento.style;
           const fontSize = item.elemento.fontSize;
           const text = item.elemento.text;
+          const test_text = item.elemento.test_text || "6";
+          var text_generated = generateText(test_text.toString()); 
           const pageBreak = item.elemento.pageBreak;
           const bold = item.elemento.bold;
           const italics = item.elemento.italics;
-          const font = item.elemento.font;
+          const font = item.elemento.font || "Roboto";
           dd.content.push({
             toc : {
               id : id_sec,
@@ -378,12 +607,27 @@
               }
             }
           });
+          dd_preview.content.push({
+            toc : {
+              id : id_sec,
+              title : {
+                text : text_generated,
+                style : style,
+                fontSize : fontSize,
+                pageBreak : pageBreak,
+                bold : bold,
+                italics : italics,
+                font : font
+              }
+            }
+          });
+          console.log(dd_preview);
         }
       });
       const clickedButtonValue = event.submitter.value;
       if(clickedButtonValue === "preview"){
-        console.log(dd);
-        const pdfDocGenerator = pdfMake.createPdf(dd);
+        console.log(dd_preview);
+        const pdfDocGenerator = pdfMake.createPdf(dd_preview);
         if (window.innerWidth < 1270) {
           // Open the PDF in a new tab/window
           pdfDocGenerator.open();
@@ -399,7 +643,7 @@
         }
       }else{
         //generatedPdfData = pdfMake.createPdf(dd).getDataUrl;
-        //pdfMake.createPdf(dd).print();
+        //pdfMake.createPdf(dd).download();
         ddStore.set(dd);
 
         const unsubscribe = ddStore.subscribe((value) => {
@@ -420,6 +664,7 @@
       const field = {
         id: nextId,
         content: '',
+        test_text: '',
         selectedfont: '',
         selectedfontsize: '',
         selectedstyle: '',
@@ -453,8 +698,10 @@
 
     function addFieldtoColumn(index) {
       const field = {
+        type : "field",
         id: nextId,
         content: '',
+        test_text: '',
         selectedfont: '',
         selectedfontsize: '',
         selectedstyle: '',
@@ -463,7 +710,6 @@
         width : "auto",
         tocItem : ''
       };
-      const item = { type: 'field', elemento: field };
       for (var i = 0; i < contenuto.length; i++) {
         var colonna = contenuto[i];
         if (colonna.type === "column" && colonna.elemento.id === index) {
@@ -473,6 +719,78 @@
         }
       }
       nextId++;
+    }
+    function addIMGtoColumn(index) {
+      var filePath = 'default/black.jpg';
+      const reader = new FileReader();
+      
+      reader.addEventListener('load', function(event) {
+        const result = event.target.result;
+
+        const img = {
+          type : "IMG",
+          id: nextId,
+          selectedFile: null,
+          imgContent : '',
+          test_img: result,
+          larghezza: 10,
+          altezza : 10,
+          larghezza_fit: 100,
+          altezza_fit: 200,
+          alignment :"",
+          imgMargins : [0,10,0,0],
+          isMaxDimensionsSelected : "true",
+        };
+        for (var i = 0; i < contenuto.length; i++) {
+          var colonna = contenuto[i];
+          if (colonna.type === "column" && colonna.elemento.id === index) {
+              colonna.elemento.fields.push(img);
+              updateFunction();
+              break; // Assuming you want to update only the first occurrence
+          }
+        }
+        nextId++;
+      });
+
+      fetch(filePath)
+        .then(response => response.blob())
+        .then(blob => reader.readAsDataURL(blob));
+    }
+    function addSVGtoColumn(index) {
+      var filePath = 'default/file-black-icon.svg';
+      const reader = new FileReader();
+      
+      reader.addEventListener('load', function(event) {
+        const result = event.target.result;
+
+        const svg = {
+          type : "SVG",
+          id: nextId,
+          selectedFile: null,
+          imgContent : '',
+          test_img: result,
+          larghezza: 10,
+          altezza : 10,
+          larghezza_fit: 100,
+          altezza_fit: 200,
+          alignment :"",
+          imgMargins : [0,10,0,0],
+          isMaxDimensionsSelected : "true",
+        };
+        for (var i = 0; i < contenuto.length; i++) {
+          var colonna = contenuto[i];
+          if (colonna.type === "column" && colonna.elemento.id === index) {
+              colonna.elemento.fields.push(svg);
+              updateFunction();
+              break; // Assuming you want to update only the first occurrence
+          }
+        }
+        nextId++;
+      });
+
+      fetch(filePath)
+        .then(response => response.blob())
+        .then(blob => reader.readAsText(blob));
     }
 
     function removeColumn(id) {
@@ -505,19 +823,28 @@
           italics: "",
           color:'', 
           righe: 1,
-          contenuto_t:[{type : "campo",id : nextId+1,testo:[""],larghezza_colonne :["auto"],fillcolor : [""], numero: 1, tipoaltezza_riga : "auto", altezza_riga : 10, borders:{left:[true],top:[true],right:[true],bottom:[true]}, alignments: [""], colspan : [1]},{type : "contenuto_campi",id : nextId+2,id_riga : 1, testo:[""], tipoaltezza_riga : "auto", altezza_riga : 10, fillcolor : [""], borders:{left:[true],top:[true],right:[true],bottom:[true]}, alignments : [""], colspan : [1]}] 
+          contenuto_t:[{type : "campo",id : nextId+1,testo:[""],test_text: [''], settings : [-1,-1,""],larghezza_colonne :["auto"],fillcolor : [""], numero: 1, tipoaltezza_riga : "auto", altezza_riga : 10, borders:{left:[true],top:[true],right:[true],bottom:[true]}, alignments: [""], colspan : [1]},{type : "contenuto_campi",id : nextId+2,id_riga : 1, testo:[""], test_text: [''],tipoaltezza_riga : "auto", altezza_riga : 10, fillcolor : [""], borders:{left:[true],top:[true],right:[true],bottom:[true]}, alignments : [""], colspan : [1]}] 
         };
         const item = { type: 'table', elemento: table };
         contenuto.splice(i, 0, item);
         //contenuto = [...contenuto, item];
         nextId = nextId +3;  
     }                 
-
+    var indice_settings = -1;
     function removeRiga(tableId, contenutoCampiId) {
+      const tableCells = document.querySelectorAll('.table_cell');
+      tableCells.forEach(cell => {
+        cell.style.backgroundColor = 'white';
+        cell.style.border = '1px solid #ccc';
+      });
       for (var i = 0; i < contenuto.length; i++) {
           var tabella = contenuto[i];
           if (tabella.type === "table" && tabella.elemento.id === tableId) {
               tabella.elemento.righe -= 1;
+              if (tabella.elemento.contenuto_t[0].settings[1] === contenutoCampiId){
+                tabella.elemento.contenuto_t[0].settings = [-1,-1,""];
+                indice_settings = -1;
+              }
           }
         }
       contenuto = contenuto.map(item => {
@@ -527,30 +854,75 @@
         return item;
       });
     }
-
+    
+    function addSettings(event,tableId,fieldId,index){
+      const tableCells = document.querySelectorAll('.table_cell');
+      tableCells.forEach(cell => {
+        cell.style.backgroundColor = 'white';
+        cell.style.border = '1px solid #ccc';
+      });
+      const inputElement = event.target;
+      inputElement.style.backgroundColor = 'lightblue';
+      inputElement.style.border = '2px solid darkblue';
+      for (var i = 0; i < contenuto.length; i++) {
+          var tabella = contenuto[i];
+          if (tabella.type === "table" && tabella.elemento.id === tableId) {
+            for (var x = 0; x < tabella.elemento.contenuto_t.length; x++){
+              var el = tabella.elemento.contenuto_t[x];
+              if (el.id === fieldId){
+                tabella.elemento.contenuto_t[0].settings[0] = index; 
+                indice_settings = index;
+                tabella.elemento.contenuto_t[0].settings[1] = el.id; 
+                tabella.elemento.contenuto_t[0].settings[2] = el.type;
+                console.log(tabella.elemento.contenuto_t[0]);
+                console.log(tabella.elemento.contenuto_t);
+              }
+            }
+          }
+        }
+        contenuto = [...contenuto];
+    }
     function addRiga(tableId) {
       var num_righe = 1;
       var border = "";
+      var colonne = 1;
       for (var i = 0; i < contenuto.length; i++) {
           var tabella = contenuto[i];
           if (tabella.type === "table" && tabella.elemento.id === tableId) {
             var num_righe = tabella.elemento.righe
             var border = tabella.elemento.layout;
+            colonne = tabella.elemento.contenuto_t[0].numero;
           }
       };
-      var borders = {};
+      var borders = {left:[],top:[],right:[],bottom:[]};
       if (border === "noBorders"){
-        borders = {left:[false],top:[false],right:[false],bottom:[false]};
+        for (let i = 0; i < colonne; i++) {
+          borders.left.push(false);
+          borders.top.push(false);
+          borders.right.push(false);
+          borders.bottom.push(false);
+        }
       }else if(border === "Custom"){
-        borders = {left:[true],top:[true],right:[true],bottom:[true]};
+        for (let i = 0; i < colonne; i++) {
+          borders.left.push(true);
+          borders.top.push(true);
+          borders.right.push(true);
+          borders.bottom.push(true);
+        }
       }else{
-        borders = {left:[false],top:[false],right:[false],bottom:[false]};
+        for (let i = 0; i < colonne; i++) {
+          borders.left.push(false);
+          borders.top.push(false);
+          borders.right.push(false);
+          borders.bottom.push(false);
+        }
       };
       contenuto_campi = {
           type:"contenuto_campi",
           id: nextId,
           id_riga: num_righe +1,
           testo: [""],
+          test_text: [''],
           tipoaltezza_riga : "auto",
           altezza_riga:10,
           fillcolor : [""],
@@ -571,6 +943,67 @@
           console.log(contenuto)
 
     }
+    function addColonna(tableId){
+      for (var i = 0; i < contenuto.length; i++) {
+          var selected = contenuto[i];
+          if (selected.type === "table" && selected.elemento.id === tableId){
+            var larghezza_colonne = selected.elemento.contenuto_t[0].larghezza_colonne[0];
+            var borders = {};
+            borders.left = selected.elemento.contenuto_t[0].borders.left[0];
+            borders.top = selected.elemento.contenuto_t[0].borders.top[0];
+            borders.right = selected.elemento.contenuto_t[0].borders.right[0];
+            borders.bottom = selected.elemento.contenuto_t[0].borders.bottom[0];
+            selected.elemento.contenuto_t[0].larghezza_colonne.push(larghezza_colonne);
+            selected.elemento.contenuto_t[0].borders.left.push(borders.left);
+            selected.elemento.contenuto_t[0].borders.top.push(borders.top);
+            selected.elemento.contenuto_t[0].borders.right.push(borders.right);
+            selected.elemento.contenuto_t[0].borders.bottom.push(borders.bottom);
+            selected.elemento.contenuto_t[0].colspan.push(1);
+            selected.elemento.contenuto_t[0].numero += 1;
+            var cont_t = selected.elemento.contenuto_t;
+            for (var x = 1; x < cont_t.length; x++){
+              cont_t[x].testo.push('');
+              cont_t[x].colspan.push(1);
+              cont_t[x].fillcolor.push('');
+              cont_t[x].alignments.push('');
+              cont_t[x].borders.left.push(cont_t[x].borders.left[0]);
+              cont_t[x].borders.top.push(cont_t[x].borders.top[0]);
+              cont_t[x].borders.right.push(cont_t[x].borders.right[0]);
+              cont_t[x].borders.bottom.push(cont_t[x].borders.bottom[0]);
+            }
+          }
+        }
+        contenuto = [...contenuto];
+    }
+    function removeColonna(tableId){
+      for (var i = 0; i < contenuto.length; i++) {
+          var selected = contenuto[i];
+          if (selected.type === "table" && selected.elemento.id === tableId){
+            if (selected.elemento.contenuto_t[0].numero > 1){
+              var larghezza_colonne = selected.elemento.contenuto_t[0].larghezza_colonne[0];
+              selected.elemento.contenuto_t[0].larghezza_colonne.pop();
+              selected.elemento.contenuto_t[0].borders.left.pop();
+              selected.elemento.contenuto_t[0].borders.top.pop();
+              selected.elemento.contenuto_t[0].borders.right.pop();
+              selected.elemento.contenuto_t[0].borders.bottom.pop();
+              selected.elemento.contenuto_t[0].colspan.pop();
+              selected.elemento.contenuto_t[0].numero -= 1;
+              var cont_t = selected.elemento.contenuto_t;
+              for (var x = 1; x < cont_t.length; x++){
+                cont_t[x].testo.pop();
+                cont_t[x].colspan.pop();
+                cont_t[x].fillcolor.pop();
+                cont_t[x].alignments.pop();
+                cont_t[x].borders.left.pop();
+                cont_t[x].borders.top.pop();
+                cont_t[x].borders.right.pop();
+                cont_t[x].borders.bottom.pop();
+              }
+            }
+          }
+        }
+        contenuto = [...contenuto];
+    }
   
     function removeTable(tableId) {
       contenuto = contenuto.filter(item => !(item.type === 'table' && item.elemento.id === tableId));
@@ -582,6 +1015,7 @@
       } else {
         field.borders[direction][index] = false;
       }
+      console.log(contenuto);
     }
 
   //---------------------Lists-----------------------------
@@ -595,7 +1029,8 @@
             color: "", 
             markerColor: "", 
             pointer : "",
-            testo: []
+            testo: [],
+            test_text: [],
           };
           const item = { type: 'list', elemento: list };
           contenuto.splice(i, 0, item);
@@ -610,7 +1045,8 @@
     function addFieldtoList(index) {
         const field = {
           id: nextId,
-          content: ''
+          content: '',
+          test_text: '',
         };
         for (var i = 0; i < contenuto.length; i++) {
           var lista = contenuto[i];
@@ -648,6 +1084,7 @@
       const header = {
         id: nextId,
         testo: '',
+        test_text: '',
         alignment : '',
         style : '',
         font: '',
@@ -692,6 +1129,7 @@
           const footer = {
             id: nextId,
             testo: '',
+            test_text: '',
             alignment : '',
             style : '',
             font: '',
@@ -734,22 +1172,37 @@
     }
   //---------------------SVG----------------------------------------
     function addSVG(i) {
-      const svg = {
-        id: nextId,
-        selectedFile: null,
-        svgContent : '',
-        larghezza: 10,
-        altezza : 10,
-        larghezza_fit: 100,
-        altezza_fit: 200,
-        alignment :"",
-        svgMargins : [0,10,0,0],
-        isMaxDimensionsSelected : "true"
-      };
-      const item = { type: 'svg', elemento: svg};
-      contenuto.splice(i, 0, item);
-      //contenuto = [...contenuto, item];
-      nextId++  
+      var filePath = 'default/file-black-icon.svg';
+      const reader = new FileReader();
+      
+      reader.addEventListener('load', function(event) {
+        const result = event.target.result;
+
+        const svg = {
+          id: nextId,
+          selectedFile: null,
+          svgContent: '',
+          test_svg: result,
+          larghezza: 10,
+          altezza: 10,
+          larghezza_fit: 100,
+          altezza_fit: 200,
+          alignment: '',
+          svgMargins: [0, 10, 0, 0],
+          isMaxDimensionsSelected: "true"
+        };
+
+        const item = { type: 'svg', elemento: svg };
+        
+        contenuto.splice(i, 0, item);
+        nextId++;
+        contenuto = [...contenuto];
+        console.log(contenuto);
+      });
+
+      fetch(filePath)
+        .then(response => response.blob())
+        .then(blob => reader.readAsText(blob));
     }
 
     function removeSVG(svgId) {
@@ -758,22 +1211,37 @@
 
   //---------------------IMG----------------------------------------
     function addIMG(i) {
-      const img = {
-        id: nextId,
-        selectedFile: null,
-        imgContent : '',
-        larghezza: 10,
-        altezza : 10,
-        larghezza_fit: 100,
-        altezza_fit: 200,
-        alignment :"",
-        imgMargins : [0,10,0,0],
-        isMaxDimensionsSelected : "true",
-      };
-      const item = { type: 'img', elemento: img};
-      contenuto.splice(i, 0, item);
-      //contenuto = [...contenuto, item];
-      nextId++  
+      var filePath = 'default/black.jpg';
+      const reader = new FileReader();
+      
+      reader.addEventListener('load', function(event) {
+        const result = event.target.result;
+
+        const img = {
+          id: nextId,
+          selectedFile: null,
+          imgContent : '',
+          test_img: result,
+          larghezza: 10,
+          altezza : 10,
+          larghezza_fit: 100,
+          altezza_fit: 200,
+          alignment :"",
+          imgMargins : [0,10,0,0],
+          isMaxDimensionsSelected : "true",
+        };
+
+        const item = { type: 'img', elemento: img};
+        contenuto.splice(i, 0, item);
+        //contenuto = [...contenuto, item];
+        nextId++ 
+        contenuto = [...contenuto];
+        console.log(contenuto);
+      });
+
+      fetch(filePath)
+        .then(response => response.blob())
+        .then(blob => reader.readAsDataURL(blob));
     }
 
     function removeIMG(imgId) {
@@ -1374,9 +1842,10 @@
           id: nextId,
           id_sec : "",
           style : "",
-          fontSize: 15,
+          fontSize: "15",
           font:"",
           text :"",
+          test_text: '',
           pageBreak: '',
           bold : "",
           italics: ""
@@ -1392,7 +1861,29 @@
     }
     
 
-  
+  //-----------------------Generate Text -----------------------------
+    function generateText(num_words) {
+      const words = [
+        'Lorem', 'ipsum', 'dolor', 'sit', 'amet,', 'consectetur',
+        'adipiscing', 'elit.', 'Sed', 'non', 'risus', 'quis', 'massa',
+        'facilisis', 'gravida', 'et', 'sit', 'amet', 'erat', 'aliquet',
+        'lobortis', 'odio.', 'Vivamus', 'tincidunt', 'purus', 'et', 'massa',
+        'euismod', 'lobortis.', 'Nulla', 'mollis', 'tempor', 'lectus', 'quis',
+        'convallis.', 'Suspendisse', 'placerat', 'molestie', 'ligula', 'ut',
+        'gravida.', 'Nullam', 'placerat', 'efficitur', 'massa', 'non',
+        'pellentesque.'
+      ];
+
+      let generatedText = '';
+      let wordCount = 0;
+
+      while (wordCount < num_words) {
+        generatedText += words[wordCount % words.length] + ' ';
+        wordCount++;
+      }
+
+      return generatedText.trim();
+    }
   //-------------------TextArea auto resize-------------------------
     function adjustTextareaHeight(event) {
       const textarea = event.target;
@@ -1622,11 +2113,12 @@
       console.log(dropzones);
       contenuto = [...contenuto];
     }
-    function handleDropFile(event,id,id_sec) {
+    function handleDropFile(event,id,id_sec,pos) {
       event.preventDefault();
       for (var i = 0; i < contenuto.length; i++) {
         var item = contenuto[i];
         console.log("id = "+id);
+        console.log("id_sec = "+id_sec);
         if (item.type != "page" && item.elemento.id === id){
           if(item.type === "field"){
             item.elemento.content = selectedFileContent;
@@ -1639,6 +2131,24 @@
                 field.content = selectedFileContent;
               }
             }
+          }if(item.type === "toc"){
+            item.elemento.text = selectedFileContent;
+          }if(item.type === "toc"){
+            item.elemento.text = selectedFileContent;
+          }if(item.type === "table"){
+            for (var x = 0; x < item.elemento.contenuto_t.length; x++){
+              var el = item.elemento.contenuto_t[x];
+              if (el.id === id_sec){
+                el.testo[pos] = selectedFileContent;
+              }
+            };
+          }if (item.type === "list"){
+            for (var x = 0; x < item.elemento.testo.length; x++){
+              var el = item.elemento.testo[x];
+              if (el.id === id_sec){
+                el.content = selectedFileContent;
+              }
+            }
           }else{
             item.elemento.testo = selectedFileContent;
           }
@@ -1647,6 +2157,47 @@
       console.log(contenuto);
       contenuto = [...contenuto];
     }
+    function handleDropSVG(event,id) {
+      event.preventDefault();
+      console.log(selectedFileContent);
+      for (var i = 0; i < contenuto.length; i++) {
+        var item = contenuto[i];
+        console.log("id = "+id);
+        if (item.type != "page" && item.elemento.id === id){
+          if (item.type === "img"){
+            item.elemento.imgContent = selectedFileContent;
+            item.elemento.selectedFile = selectedFileContent;
+          }else{
+            item.elemento.svgContent = selectedFileContent;
+            item.elemento.selectedFile = selectedFileContent;
+          };
+        };
+      };
+      console.log(contenuto);
+      contenuto = [...contenuto];
+    }
+    function handleDropSVG_IMG_COLUMN(event,column_id,field_id){
+      event.preventDefault();
+      console.log(selectedFileContent);
+      for (var i = 0; i < contenuto.length; i++) {
+        var item = contenuto[i];
+        if (item.type != "page" && item.elemento.id === column_id){
+          for (var x = 0; x < item.elemento.fields.length; x++){
+            if (item.elemento.fields[x].id === field_id){
+              if (item.elemento.fields[x].type === "IMG"){
+                item.elemento.fields[x].imgContent = selectedFileContent;
+                item.elemento.fields[x].selectedFile = selectedFileContent;
+              }else{
+                item.elemento.fields[x].imgContent = selectedFileContent;
+                item.elemento.fields[x].selectedFile = selectedFileContent;
+              };
+            }
+          }
+        };
+      };
+      console.log(contenuto);
+      contenuto = [...contenuto];
+    };
     function handleDropAdd(event,i) {
       event.preventDefault();
       const dropZone = event.currentTarget;
@@ -1878,7 +2429,7 @@
                   <div class = "cont-allignment">
                     <label> 
                       <p>Contenuto Header: </p>
-                    <textarea class="autosize-textarea dropzone_Text"   on:drop={(e) => handleDropFile(e,item.elemento.id,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={item.elemento.testo} on:input={handleInput} on:input:resize={adjustTextareaHeight} id={`textareaHeader-${i}`} /> 
+                    <textarea class="autosize-textarea dropzone_Text dropnew"   on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={item.elemento.testo} on:input={handleInput} on:input:resize={adjustTextareaHeight} id={`textareaHeader-${i}`} /> 
                     <!--<button class = "boldconverter" on:click={() => applyBold(`textareaHeader-${i}`)}>Bold</button>-->
                     </label>
                     <p>Alignment: </p>
@@ -1973,6 +2524,10 @@
                         <input type="number" bind:value={item.elemento.margin.bottom} min="0" max = {bottomMarginValue - 15}/> 
                       </label>-->
                     </div>
+                    <div class = "preview_height">
+                      <p>Numero di parole approssimativo per la preview:</p>
+                      <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
+                    </div>
                   </div>
                   <!--
                   <div class = "add-element">
@@ -1993,7 +2548,7 @@
                   <div class = "cont-allignment">
                     <label> 
                       <p>Contenuto Footer: </p>
-                      <textarea class="autosize-textarea dropzone_Text" bind:value={item.elemento.testo} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
+                      <textarea class="autosize-textarea dropzone_Text dropnew" bind:value={item.elemento.testo} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                     </label>
                     <p>Alignment: </p>
                     <label> 
@@ -2087,6 +2642,10 @@
                         <input type="number" bind:value={item.elemento.margin.bottom} min="20" max = {bottomMarginValue -15}/> 
                       </label>
                     </div>
+                    <div class = "preview_height">
+                      <p>Numero di parole approssimativo per la preview:</p>
+                      <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
+                    </div>
                   </div>
                 </div>
                 <div class="dropzone upper-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
@@ -2103,7 +2662,7 @@
                   <div class= "element">
                     <div class = "contenuto_field">
                         <p>Contenuto :<small-grey> (shift + invio per andare a capo)</small-grey></p> 
-                        <textarea class="autosize-textarea dropzone_Text" bind:value={item.elemento.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
+                        <textarea class="autosize-textarea dropzone_Text" bind:value={item.elemento.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                     </div>
                     
                       <div class = "style&tipo">
@@ -2190,7 +2749,10 @@
                               <option value="30">30</option>
                           </select>
                         </div>
-                  
+                        <div class = "preview_height">
+                          <p>Numero di parole approssimativo per la preview:</p>
+                          <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
+                        </div>
                       </div>
                     
                     <div class = "field_indice">
@@ -2244,7 +2806,8 @@
                     </div>
 
                     {#each item.elemento.fields as field,x}  
-                      <div class = "cella">
+                      {#if field.type === "field"}
+                        <div class = "cella">
                         <div class = "testo">
                           <h2>Colonna {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>Rimuovi colonna</button>
                         </div>   
@@ -2254,7 +2817,7 @@
                               <label> 
                                 <p>Contenuto: </p><small-grey> (shift + invio per andare a capo)</small-grey>
                               </label>
-                              <textarea class="autosize-textarea dropzone_Text" bind:value={field.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
+                              <textarea class="autosize-textarea dropzone_Text drop2" bind:value={field.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                             </div>
                             <div class = "specifiche">
                               <div class = "style&tipo">
@@ -2358,11 +2921,164 @@
                                 <input id = "1" type="number" bind:value={field.width}>
                               </label>
                             </div>
+                            <div class = "preview_height">
+                              <p>Numero di parole approssimativo per la preview:</p>
+                              <input type="number" bind:value = {field.test_text} min="1" /> 
+                            </div>
                           </div>
                         </div>
+                      {:else if field.type === "IMG"}
+                        <div class = "cella">
+                          <div class = "testo">
+                            <h2>Colonna {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>Rimuovi colonna</button>
+                          </div>  
+                          <div class="svg-element">
+                            <div class = "placeHolderSVG"> {field.imgContent}</div>
+                            <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
+                            <!-- svelte-ignore missing-declaration -->
+                            <input  class = "custom-file-input" type="file" accept=".jpg , .png" on:change={handleFileIMGChange(event,field.id)} />
+                            <h2>Dimensioni:</h2>
+                            <div class = "dimensioni_svg">
+                              <label2>
+                                <input type= "radio" bind:group={field.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,field.id)} value = "true">
+                                Dimensioni massime<small-grey2>(riempie un rettangolo senza distorsione)</small-grey2>
+                              </label2>
+                              <div class = {"dim_max_img" + field.id}>
+                                <div class = "dimensioni">
+                                  <label7>
+                                    Larghezza Massima:
+                                    <input type = "number" bind:value = {field.larghezza_fit} min = 10 max = 595>
+                                  </label7>
+                                  <label7>
+                                    Altezza Massima:
+                                    <input type = "number" bind:value = {field.altezza_fit} min = 10 max = 841 >
+                                  </label7>
+                                </div>
+                              </div>
+                              <label2>
+                                <input type= "radio" bind:group={field.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,field.id)} value = "false">
+                                Dimensioni assolute<small-grey2>(adatta a un rettangolo con distorsione)</small-grey2>
+                              </label2>
+                              <div class = {"dim_abs_img" + field.id}>
+                                <div class = "dimensioni">
+                                  <label7>
+                                    Larghezza:
+                                    <input type = "number" bind:value = {field.larghezza} min = 10 max = 595>
+                                  </label7>
+                                  <label7>
+                                    Altezza:
+                                    <input type = "number" bind:value = {field.altezza} min = 10 max = 841 >
+                                  </label7>
+                                </div>
+                              </div>
+                              <div class = "posizione">
+                                <p>Alignment: </p>
+                                <label> 
+                                  <input type="radio" bind:group={field.alignment} value="left"/> 
+                                  Sinistra
+                                </label>
+                                <label> 
+                                  <input type="radio" bind:group={field.alignment} value="center"/> 
+                                  Centro
+                                </label>
+                                <label> 
+                                  <input type="radio" bind:group={field.alignment} value="right"/> 
+                                  Destra
+                                </label>    
+                              </div>
+                              <h2>Margini dell' immagine:</h2>
+                              <div class = "margini_pagina">
+                                Sinistra:
+                                <input type="number" class = "marginiIMG" bind:value={field.imgMargins[0]} oninput="HandleMarginiIMG()" min = 0 max = 595 >
+                                Superiore:
+                                <input type="number" class = "marginiIMG" bind:value={field.imgMargins[1]} oninput="HandleMarginiIMG()" min = 0 max = 841>
+                                Destra:
+                                <input type="number" class = "marginiIMG" bind:value={field.imgMargins[2]} oninput="HandleMarginiIMG()" min = 0 max = 595>
+                                Inferiore:
+                                <input type="number" class = "marginiIMG" bind:value={field.imgMargins[3]} oninput="HandleMarginiIMG()" min = 0 max = 841>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      {:else if field.type === "SVG"}
+                        <div class = "cella">
+                          <div class = "testo">
+                            <h2>Colonna {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>Rimuovi colonna</button>
+                          </div>  
+                          <div class="svg-element">
+                            <div class = "placeHolderSVG"> {field.imgContent}</div>
+                            <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
+                            <!-- svelte-ignore missing-declaration -->
+                            <input  class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,field.id)} />
+                            <h2>Dimensioni:</h2>
+                            <div class = "dimensioni_svg">
+                              <label2>
+                                <input type= "radio" bind:group={field.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,field.id)} value = "true">
+                                Dimensioni massime<small-grey2>(riempie un rettangolo senza distorsione)</small-grey2>
+                              </label2>
+                              <div class = {"dim_max_img" + field.id}>
+                                <div class = "dimensioni">
+                                  <label7>
+                                    Larghezza Massima:
+                                    <input type = "number" bind:value = {field.larghezza_fit} min = 10 max = 595>
+                                  </label7>
+                                  <label7>
+                                    Altezza Massima:
+                                    <input type = "number" bind:value = {field.altezza_fit} min = 10 max = 841 >
+                                  </label7>
+                                </div>
+                              </div>
+                              <label2>
+                                <input type= "radio" bind:group={field.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,field.id)} value = "false">
+                                Dimensioni assolute<small-grey2>(adatta a un rettangolo con distorsione)</small-grey2>
+                              </label2>
+                              <div class = {"dim_abs_img" + field.id}>
+                                <div class = "dimensioni">
+                                  <label7>
+                                    Larghezza:
+                                    <input type = "number" bind:value = {field.larghezza} min = 10 max = 595>
+                                  </label7>
+                                  <label7>
+                                    Altezza:
+                                    <input type = "number" bind:value = {field.altezza} min = 10 max = 841 >
+                                  </label7>
+                                </div>
+                              </div>
+                              <div class = "posizione">
+                                <p>Alignment: </p>
+                                <label> 
+                                  <input type="radio" bind:group={field.alignment} value="left"/> 
+                                  Sinistra
+                                </label>
+                                <label> 
+                                  <input type="radio" bind:group={field.alignment} value="center"/> 
+                                  Centro
+                                </label>
+                                <label> 
+                                  <input type="radio" bind:group={field.alignment} value="right"/> 
+                                  Destra
+                                </label>    
+                              </div>
+                              <h2>Margini dell' immagine:</h2>
+                              <div class = "margini_pagina">
+                                Sinistra:
+                                <input type="number" class = "marginiIMG" bind:value={field.imgMargins[0]} oninput="HandleMarginiIMG()" min = 0 max = 595 >
+                                Superiore:
+                                <input type="number" class = "marginiIMG" bind:value={field.imgMargins[1]} oninput="HandleMarginiIMG()" min = 0 max = 841>
+                                Destra:
+                                <input type="number" class = "marginiIMG" bind:value={field.imgMargins[2]} oninput="HandleMarginiIMG()" min = 0 max = 595>
+                                Inferiore:
+                                <input type="number" class = "marginiIMG" bind:value={field.imgMargins[3]} oninput="HandleMarginiIMG()" min = 0 max = 841>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      {/if}
                       {/each}
                     <div class ="bottonicolonne">
                       <button type="button" on:click={() => addFieldtoColumn(item.elemento.id)}>Aggiungi testo</button>
+                      <button type="button" on:click={() => addIMGtoColumn(item.elemento.id)}>Aggiungi Immagine</button>
+                      <button type="button" on:click={() => addSVGtoColumn(item.elemento.id)}>Aggiungi SVG</button>
                     </div>
                   </div>
                 <div class="dropzone upper-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
@@ -2472,7 +3188,7 @@
                     </div>             
                   </div>           
                   {#each item.elemento.contenuto_t as field}   
-                    <div class="element-campi">  
+                    <!--<div class="element-campi">  
                       {#if field.type === "campo"}
                         <h2>Attributi delle colonne</h2>
                         <div class = "attributi_colonne">
@@ -2497,7 +3213,7 @@
                               <div class= "nome&width">
                                 <label class = "label2"> 
                                   Nome colonna: 
-                                  <input class = nomi_colonne type="text" bind:value={field.testo[i]}/> 
+                                  <textarea class="autosize-textarea dropzone_Text dropnew nomi_colonne"   on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,i)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={field.testo[i]} on:input={handleInput} on:input:resize={adjustTextareaHeight} />
                                 </label>
                                 <label>
                                   <input id={"auto" + field.id} type="radio" bind:group={field.larghezza_colonne[i]} value="auto" on:change={HandleChangeLarghezzaColonna(event, field.id, i)}/>
@@ -2539,6 +3255,10 @@
                                   <input type="radio" bind:group={field.alignments[i]} value = "right"/> 
                                   Destra
                               </label>
+                              <div class = "preview_height">
+                                <p>Numero di parole approssimativo per la preview:</p>
+                                <input type="number" bind:value = {field.test_text[i]} min="1" /> 
+                              </div>
                             </div>
                           </div>
                         {/each}
@@ -2552,7 +3272,7 @@
                                   <div class = "cont_righe">
                                     <label class = "label2"> 
                                       Contenuto colonna {i+1}: 
-                                      <textarea class="autosize-textarea" bind:value={field.testo[i]} on:input={handleInput} on:input:resize={adjustTextareaHeight} />
+                                      <textarea class="autosize-textarea dropzone_Text dropnew "   on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,i)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={field.testo[i]} on:input={handleInput} on:input:resize={adjustTextareaHeight} />
                                     </label> 
                                     <div class = "span&color">  
                                       <label class = "label6"> 
@@ -2584,6 +3304,10 @@
                                         <input type="radio" bind:group={field.alignments[i]} value = "right"/> 
                                         Destra
                                     </label>
+                                    <div class = "preview_height">
+                                      <p>Numero di parole approssimativo per la preview:</p>
+                                      <input type="number" bind:value = {field.test_text[i]} min="1" /> 
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -2604,10 +3328,131 @@
                       </div>
                       {/if}
                       </div>
+                  -->
+                      {#if field.type === "campo"}
+                      <div class ="altezza">
+                        <label>
+                          <input type="radio" bind:group={field.tipoaltezza_riga} value="auto" on:change={HandleChangeAltezzaColonna(event,field.id)} />
+                          Altezza auto
+                        </label>
+                        <label>
+                          <input type="radio" bind:group={field.tipoaltezza_riga} value="custom" on:change={HandleChangeAltezzaColonna(event,field.id)}/>
+                          <p>Altezza :</p>
+                          <input id = {field.id} class="altezza_colonna" type="number" bind:value={field.altezza_riga} min = 2 disabled>
+                        </label>
+                      </div>
+                      Riga di intestazione
+                      <div class = "attributes&addcolonna">
+                        <div class = "attributes_container">
+                          {#each [...Array(field.numero)] as _, index}
+                          <input class ="table_cell" type= "text" on:click = {(e) => addSettings(e,item.elemento.id,field.id,index)} on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,index)} on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={field.testo[index]} />
+                          {/each}
+                        </div>
+                        <div class ="add&remove">
+                          <button  class = "aggiungi-colonna" type="button" on:click={() => addColonna(item.elemento.id)}>Aggiungi Colonna</button>
+                          <button  class = "aggiungi-colonna" type="button" on:click={() => removeColonna(item.elemento.id)}>Rimuovi Colonna</button>
+                        </div>
+                      </div>
+                        {#if field.settings[0] != -1 && field.settings[2] === "campo"}
+                          <div class = "settings">
+                            <div class= "larghezza">
+                              <label>
+                                <input id={"auto" + field.id} type="radio" bind:group={field.larghezza_colonne[indice_settings]} value="auto" on:change={HandleChangeLarghezzaColonna(event, field.id, indice_settings)}/>
+                                Larghezza auto
+                              </label>
+                              <label>
+                                <input id={"custom" + field.id} type="radio" value="custom" on:change={HandleChangeLarghezzaColonna(event, field.id,indice_settings)}/>
+                                <p>Larghezza :</p>
+                                <input id={field.id + "/" + indice_settings} class="larghezza_colonna" type="number" bind:value={field.larghezza_colonne[indice_settings]}/>
+                              </label>
+                           </div>
+                            <div class = "span&color">
+                              <label class = "label"> 
+                                Celle del campo: 
+                              <input type="number" bind:value={field.colspan[indice_settings]}/> 
+                              </label>
+                              <label class ="label"> 
+                                Colore del campo: 
+                              <input type="color" bind:value={field.fillcolor[indice_settings]}/> 
+                              </label>
+                            </div>
+                            <label class ="label5"> 
+                              Bordi: 
+                              <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.left[indice_settings]} > 
+                                Sinistra
+                              <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.top[indice_settings]} > 
+                                Sopra
+                              <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.right[indice_settings]}>
+                                Destra
+                              <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.bottom[indice_settings]}>
+                                Sotto
+                            </label>
+                            <label class ="label5"> 
+                              Allineamento: 
+                              <input type="radio" bind:group={field.alignments[indice_settings]} value = "left"/> 
+                                Sinistra
+                                <input type="radio" bind:group={field.alignments[indice_settings]} value = "center"/> 
+                                Centro
+                                <input type="radio" bind:group={field.alignments[indice_settings]} value = "right"/> 
+                                Destra
+                            </label>
+                            <div class = "preview_height">
+                              <p>Numero di parole approssimativo per la preview:</p>
+                              <input type="number" bind:value = {field.test_text[indice_settings]} min="1" /> 
+                            </div>
+                          </div>
+                        {/if}
+                      {:else if field.type === "contenuto_campi"}
+                      Riga {field.id_riga}
+                      <div class = "content&addriga">
+                        <div class = "content_container">
+                          {#each [...Array(item.elemento.contenuto_t[0].numero)] as _, index}
+                          <input class ="table_cell" type= "text" on:click = {(e) => addSettings(e,item.elemento.id,field.id,index)} on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,index)} on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={field.testo[index]} />
+                          {/each}
+                        </div> 
+                        {#if item.elemento.contenuto_t[0].settings[0] != -1 && item.elemento.contenuto_t[0].settings[2] === "contenuto_campi" && item.elemento.contenuto_t[0].settings[1] === field.id}
+                        <div class = "settings" transition:fly="{{ y: -100, duration: 600 }}">
+                          <div class = "span&color">
+                            <label class = "label"> 
+                              Celle del campo: 
+                            <input type="number" bind:value={field.colspan[indice_settings]}/> 
+                            </label>
+                            <label class ="label"> 
+                              Colore del campo: 
+                            <input type="color" bind:value={field.fillcolor[indice_settings]}/> 
+                            </label>
+                          </div>
+                          <label class ="label5"> 
+                            Bordi: 
+                            <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.left[indice_settings]} > 
+                              Sinistra
+                            <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.top[indice_settings]} > 
+                              Sopra
+                            <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.right[indice_settings]}>
+                              Destra
+                            <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.bottom[indice_settings]}>
+                              Sotto
+                          </label>
+                          <label class ="label5"> 
+                            Allineamento: 
+                            <input type="radio" bind:group={field.alignments[indice_settings]} value = "left"/> 
+                              Sinistra
+                              <input type="radio" bind:group={field.alignments[indice_settings]} value = "center"/> 
+                              Centro
+                              <input type="radio" bind:group={field.alignments[indice_settings]} value = "right"/> 
+                              Destra
+                          </label>
+                          <div class = "preview_height">
+                            <p>Numero di parole approssimativo per la preview:</p>
+                            <input type="number" bind:value = {field.test_text[indice_settings]} min="1" /> 
+                          </div>
+                        </div>
+                        {/if}
+                      </div>                
+                      {/if}
                   {/each}
-                  <div class = "height&remove">
-                    <button  class = "aggiungi-riga" type="button" on:click={() => addRiga(item.elemento.id)}>Aggiungi Riga</button>
-                  </div>
+                  <button  class = "aggiungi-riga" type="button" on:click={() => addRiga(item.elemento.id)}>Aggiungi Riga</button>    
+                  <button class = "rimuovi-riga" type="button" on:click={() => removeRiga(item.elemento.id,field.id)}>Rimuovi Riga</button>
                 </div>
                 <div class="dropzone upper-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
                 <div class="dropzone lower-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
@@ -2700,10 +3545,13 @@
                   <div class="contenutolista">
                     <label class ="label7"> 
                       Contenuto riga {i2+1} : 
-                      <textarea class="autosize-textarea" bind:value={field.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} />
+                      <textarea class="autosize-textarea dropzone_Text dropnew"   on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={field.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} />
                     </label>
-                    
                     <button class = "rimuovi_riga" type="button" on:click={() => removeFieldFromList(item.elemento.id,field.id)}>Rimuovi</button>
+                    <div class = "preview_height">
+                      <p>Numero di parole approssimativo per la preview:</p>
+                      <input type="number" bind:value = {field.test_text} min="1" /> 
+                    </div>
                   </div> 
                   {/each}       
                 <button class = "aggiungi-riga" type="button" on:click={() => addFieldtoList(item.elemento.id)}>Aggiungi riga</button>
@@ -2717,8 +3565,10 @@
                   <h1>SVG </h1>  <button class = "rimuovi" type="button" on:click={() => removeSVG(item.elemento.id)}>Rimuovi</button>
                 </div>
                 <div class="svg-element">
+                  <div class = "placeHolderSVG"> {item.elemento.svgContent}</div>
+                  <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG(e,item.elemento.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
                   <!-- svelte-ignore missing-declaration -->       
-                  <input class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,item.elemento.id)} />
+                    <input class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,item.elemento.id)} />
                   <h2>Dimensioni:</h2>
                   <div class = "dimensioni_svg">
                     <label2>
@@ -2771,13 +3621,13 @@
                     <h2>Margini dell' SVG:</h2>
                     <div class = "margini_pagina">
                       Sinistra:
-                      <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[0]} oninput="HandleMarginiSVG()" min = 0 max = 595>
+                      <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[0]}  min = 0 max = 595>
                       Superiore:
-                      <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[1]} oninput="HandleMarginiSVG()" min = 0 max = 841>
+                      <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[1]}  min = 0 max = 841>
                       Destra:
-                      <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[2]} oninput="HandleMarginiSVG()" min = 0 max = 595>
+                      <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[2]}  min = 0 max = 595>
                       Inferiore:
-                      <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[3]} oninput="HandleMarginiSVG()" min = 0 max = 841>
+                      <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[3]}  min = 0 max = 841>
                     </div>
                   </div>
                 </div>
@@ -2790,6 +3640,8 @@
                   <h1>Image </h1> <button class = "rimuovi" type="button" on:click={() => removeIMG(item.elemento.id)}>Rimuovi</button>
                 </div>
                 <div class="svg-element">
+                  <div class = "placeHolderSVG"> {item.elemento.imgContent}</div>
+                  <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG(e,item.elemento.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
                   <!-- svelte-ignore missing-declaration -->
                   <input  class = "custom-file-input" type="file" accept=".jpeg , .png" on:change={handleFileIMGChange(event,item.elemento.id)} />
                   <h2>Dimensioni:</h2>
@@ -2866,12 +3718,16 @@
                     <div class = "title&id">
                       <label> 
                         <p>Titolo dell'indice :</p>
-                        <textarea class="autosize-textarea" bind:value={item.elemento.text} on:input={handleInput} on:input:resize={adjustTextareaHeight} /> 
+                        <textarea class="autosize-textarea dropzone_Text dropnew"  bind:value={item.elemento.text} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave}  /> 
                       </label>
                       <label> 
                         <p>Identificativo dell'indice :</p>
                         <input type="text" bind:value={item.elemento.id_sec} required/> 
                       </label>
+                      <div class = "preview_height">
+                        <p>Numero di parole approssimativo per la preview:</p>
+                      </div>
+                      <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
                     </div>
                     <div class= "specifiche_toc">
                       <div class = "fontsize&style">
@@ -2975,6 +3831,8 @@
     <div class="preview">
       <!--<div class="resize-handle" onmousedown={handleMouseDown} onmouseup={handleMouseUp}></div>-->
       <iframe title = "pdf-window" id="fixedElement" src="{pdfData}" frameborder="0" width=100% height=100%></iframe>
+      <button class = "send" value = "invia" type="submit">Invia</button>
+      <button class = "preview" value = "preview" type="submit">Preview</button>
     </div>    
     </div>
     </main>
