@@ -1363,51 +1363,6 @@
           return selected;
         });
       }
-    /*
-    function ChangeBorderandFill(event, id){
-      var border = event.target.value;
-      var numero = 0;
-      console.log(border);
-      if (border === "noBorders"){
-        console.log(contenuto);
-        contenuto = contenuto.map((selected) => {
-          if (selected.type !== "page" && selected.elemento.id === id) {
-            selected.elemento.layout = border;
-            selected.elemento.contenuto_t = selected.elemento.contenuto_t.map((cont) => {
-              if (cont.type === "campo"){
-                var numero = cont.numero;
-              }
-              cont.borders = {
-                left: Array(numero).fill(false),
-                top: Array(numero).fill(false),
-                right: Array(numero).fill(false),
-                bottom: Array(numero).fill(false)
-              }
-            })
-          }
-        })
-      }else if(border === ""){
-        console.log(contenuto);
-        contenuto = contenuto.map((selected) => {
-          if (selected.type !== "page" && selected.elemento.id === id) {
-            selected.elemento.layout = border;
-            selected.elemento.contenuto_t = selected.elemento.contenuto_t.map((cont) => {
-              if (cont.type === "campo"){
-                var numero = cont.numero;
-                console.log(contenuto);
-              }
-              cont.borders = {
-                left: Array(numero).fill(true),
-                top: Array(numero).fill(true),
-                right: Array(numero).fill(true),
-                bottom: Array(numero).fill(true)
-              }
-              
-            })
-          }
-        })
-      }
-    }*/
 
     let topMarginValue = 40;
     let bottomMarginValue = 40;
@@ -1894,45 +1849,7 @@
       adjustTextareaHeight(event);
     }
 
-  /* //---------------------------------iframe-resize----------------------
-    let iframeWidth = 400;
-    let iframeHeight = 300;
-    let mouseX = 0;
-    let mouseY = 0;
-    let isDragging = false;
 
-    function handleMouseDown(event) {
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-      isDragging = true;
-    }
-
-    function handleMouseUp() {
-      isDragging = false;
-    }
-
-    function handleMouseMove(event) {
-      if (!isDragging) return;
-
-      const dx = event.clientX - mouseX;
-      const dy = event.clientY - mouseY;
-      iframeWidth += dx;
-      iframeHeight += dy;
-
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-    }
-
-    onMount(() => {
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('mousemove', handleMouseMove);
-    });
-
-    onDestroy(() => {
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('mousemove', handleMouseMove);
-    });
-    */
 
 
   /*//--------------------SelectedtoBold&italics----------------
@@ -1978,10 +1895,6 @@
       cells = document.querySelectorAll('.cella');
       dropzonesText = document.querySelectorAll('.dropzone_Text');
       fileButtons = document.querySelectorAll('.fileButton');
-      //console.log("dropzones = "+dropzones);
-      //console.log("dropzonesText = "+dropzonesText);
-      //console.log("buttons = "+buttons);
-      //console.log("fileButtons = "+fileButtons);
       dropzones.forEach(dropzone => {
         dropzone.addEventListener('dragenter', handleDragEnter);
         dropzone.addEventListener('dragleave', handleDragLeave);
