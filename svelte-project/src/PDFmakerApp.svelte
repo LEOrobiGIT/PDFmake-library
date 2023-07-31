@@ -1,16 +1,112 @@
 
 <script> 
-  import { onMount, onDestroy } from 'svelte';
-  import { afterUpdate, tick } from 'svelte';
+  import { onMount} from 'svelte';
+  import { afterUpdate} from 'svelte';
   import pdfMake from 'pdfmake/build/pdfmake';
   import pdfFonts from "../public/vfs_fonts";
-  //import pdfFonts from "pdfmake/build/vfs_fonts"; 
   pdfMake.vfs = pdfFonts;
   import PDFPreview from './PDFPreview.svelte';
-  import fileList from '../src/fileList.json';
   import { ddStore } from './PDFstore.js';
   let generatedPdfData;
-  export let fileListpassed;
+  export let fileListpassed = [];
+  export let debug = false;
+  export let dictionary = {
+    label_header : "Header",
+    label_footer : "Footer",
+    label_index : "Indice",
+    label_text : "Testo",
+    label_row : "Riga Vuota",
+    label_column : "Colonna",
+    label_table : "Tabella",
+    label_list : "Lista",
+    label_svg: "SVG",
+    label_image : "Immagine",
+    add : "Aggiungi",
+    list_file: "Lista dei file",
+    create_PDF: "Crea un template PDF",
+    header : "Header",
+    button_remove: "Rimuovi",
+    button_remove_column: "Rimuovi Colonna",
+    button_remove_table : "Rimuovi Tabella",
+    button_remove_row : "Rimuovi Riga",
+    content_header : "Contenuto Header",
+    content_footer: "Contenuto Footer",
+    content_row: "Contenuto della riga",
+    alignment : "Allineamento",
+    left : "Sinistra",
+    top : "Sopra",
+    right : "Destra", 
+    bottom: "Sotto",
+    center : "Centro",
+    style : "Stile",
+    select : "Seleziona",
+    fontsize : "Grandezza del font",
+    margins : "Margini",
+    words_preview : "Numero di parole approssimativo per la preview",
+    content :"Contenuto",
+    new_line : "shit + invio per andare a capo",
+    page_break : "Nuova Pagina",
+    before : "Prima",
+    after : "Dopo",
+    none : "Nessuno",
+    bind_index : "Collega all'indice",
+    columns_container: "Container delle Colonne",
+    column_gap: "Distanza tra le colonne",
+    width_auto : "Larghezza Auto",
+    width_fill: "Larghezza Riempi",
+    width : "Larghezza",
+    max_width : "Larghezza Massima",
+    auto_width : "Larghezza auto",
+    height : "Altezza",
+    max_height : "Altezza Massima",
+    auto_height : "Altezza Auto",
+    dimensions : "Dimensioni",
+    max_dimensions : "Dimensioni Massime",
+    abs_dimensions : "Dimensioni Assolute",
+    fill_expl : "riempie un rettangolo senza distorsione",
+    abs_expl : "adatta a un rettangolo con distorsione",
+    img_margins : "Margini dell'immagine",
+    svg_margins : "Margini dell'SVG",
+    add_text : "Aggiungi Testo",
+    add_img : "Aggiungi Immagine",
+    add_svg : "Aggiugi SVG",
+    add_column: "Aggiungi Colonna",
+    add_row: "Aggiungi Riga",
+    layout : "Layout",
+    custom : "Custom",
+    no_border : "Nessun bordo",
+    horizontal_lines : "Solo righe orizzontali",
+    table_color: "Colore della tabella",
+    attributes : "Riga di Intestazione",
+    details : "Dettagli",
+    cells : "Celle del campo",
+    cells_color: "Colore del campo",
+    borders : "Bordi",
+    row: "Riga",
+    color : "Colore",
+    pointer_color: "Colore del puntatore",
+    ordered : "Ordinata",
+    unordered : "Non ordinata",
+    numbers :"Numeri",
+    numbers_roman_small: "Numeri romani minuscoli",
+    numbers_roman_big: "Numeri romani maiuscoli",
+    letters_small : "Lettere minuscole",
+    letters_big : "Lettere maiuscole",
+    circle : "Cerchio",
+    square : "Quadrato",
+    svg_margins :"Margini dell'SVG",
+    img_margings : "Margini dell'immagine",
+    title_index: "Titolo dell'indice",
+    id_index: "Identificativo dell'indice",
+    create : "Crea",
+    preview : "Preview"
+  }; 
+  export let css_root = {
+    "--button-color": "#333",
+    "--button-background": "#f4f4f4",
+    "--font": "Segoe UI",
+    "--fontsize" : "2em"
+  }
   //------------------FONTS-----------------------------
     pdfMake.fonts = {
       NotoSerif: {
@@ -45,14 +141,14 @@
       }
     };
 
-  //-------------------inizializzazione doc definition ----------------------------------
+  //-------------------intialize doc definition ----------------------------------
     let pdfData = null;
     let dd = {};
     ddStore.set(dd);
     pdfMake.createPdf(dd).getDataUrl((dataUrl) => {
       pdfData = dataUrl;
     });
-  //------------------Struttura del contenuto ----------------------------
+  //------------------Content structure ----------------------------
     let fieldbase = {type: 'field',elemento:{id:0, content: '', selectedfont:'', selectedfontsize: '', selectedstyle: '', selectedbold : '', selecteditalics :'', pagebreak: ''}};
     let columnbase ={type :"column",elemento:{id: 1, gap: 10, fields: [], alignment: "" }};
     let campo = {type : "campo",id : 3,testo:[],larghezza_colonne :[], fillcolor : [], numero: 1, altezza_riga : "auto", borders:{left:[false],top:[false],right:[false],bottom:[false]}, alignments: [], colspan : []};
@@ -68,8 +164,8 @@
     let contenuto =[pagina];
     let style = {nome : '', font : '', fontsize: '', bold : '', italics : '',alignment: '', lineheight : 1, color :'', background : ''};
     let nextId = 2; // id for the next field/column to be added
-  //------------ Dichiarazione degli stili--------------------------
-	  let custom_styles = {
+  //------------ Style declaration--------------------------
+	  export let custom_styles = {
       header : {fontSize : 18,bold : true}, 
       subheader : {fontSize : 15, bold: true}, 
       quote: {italics : true}, 
@@ -80,7 +176,7 @@
     var hasFooter = false;
     var isHeaderPresent = false;
     var isFooterPresent = false;
-  //gestisce il submit  
+  //handle submit  
     function handleSubmit(event) {
       checkFooterAndExecute;
       checkHeaderAndExecute;
@@ -644,20 +740,17 @@
         //generatedPdfData = pdfMake.createPdf(dd).getDataUrl;
         //pdfMake.createPdf(dd).download();
         ddStore.set(dd);
-
         const unsubscribe = ddStore.subscribe((value) => {
           console.log('Stored value in PDFstore:', value);
         });
-        onDestroy(() => {
+        /*onDestroy(() => {
           unsubscribe();
-        });
-
+        });*/
         contenuto =[...contenuto];
       }
       }
       
-
-  //------------------Field(testo)--------------------------------------------------------------
+  //------------------Field(text)--------------------------------------------------------------
 
     function addField(i) {
       const field = {
@@ -674,7 +767,6 @@
       };
       const item = { type: 'field', elemento: field };
       contenuto.splice(i, 0, item);
-      //contenuto = [...contenuto, item];
       nextId++;
     }
 
@@ -691,7 +783,6 @@
         };
         const item = { type: 'column', gap :10, elemento: column, alignment : ""};
         contenuto.splice(i, 0, item);
-        //contenuto = [...contenuto, item];
         nextId++;
     }
 
@@ -826,7 +917,6 @@
         };
         const item = { type: 'table', elemento: table };
         contenuto.splice(i, 0, item);
-        //contenuto = [...contenuto, item];
         nextId = nextId +3;  
     }                 
     var indice_settings = -1;
@@ -1075,8 +1165,6 @@
       }
     };
 
-    onMount(checkHeaderAndExecute);
-
     afterUpdate(checkHeaderAndExecute);
 
     function addHeader(i) {
@@ -1120,7 +1208,6 @@
       }
     };
 
-    onMount(checkFooterAndExecute);
 
     afterUpdate(checkFooterAndExecute);
     
@@ -1396,7 +1483,7 @@
         var selected = contenuto[i];
         if (selected.type === "footer"){
           fontsize = parseInt(selected.elemento.fontsize);
-          console.log(fontsize);
+          //console.log(fontsize);
         }
       }   
       if (fontsize > difference) {
@@ -1418,7 +1505,7 @@
         if (selectedValue === undefined){
           selectedValue = 20;
         };
-        console.log(selectedValue);
+        //console.log(selectedValue);
         var difference = topMarginValue - selectedValue - 5;
         if (difference < 0){
           difference = 0;
@@ -1432,7 +1519,7 @@
           var selected = contenuto[i];
           if (selected.type === "header"){
             fontsize = parseInt(selected.elemento.fontsize);
-            console.log(fontsize);
+            //console.log(fontsize);
           }
         }   
         if (fontsize > difference) {
@@ -1849,37 +1936,18 @@
       adjustTextareaHeight(event);
     }
 
-
-
-
-  /*//--------------------SelectedtoBold&italics----------------
-    function applyBold(textareaId) {
-      event.preventDefault();
-      var textarea = document.getElementById(textareaId);
-      var start = textarea.selectionStart;
-      var end = textarea.selectionEnd;
-      var selectedText = textarea.value.substring(start, end);
-      console.log("textarea = "+textarea+"start= "+"selectedText = "+selectedText);
-
-      if (selectedText.length > 0) {
-          var boldText = '<b>' + selectedText + '</b>';
-          var modifiedText = textarea.value.substring(0, start) + boldText + textarea.value.substring(end);
-          textarea.value = modifiedText;
-          textarea.setSelectionRange(start, start + boldText.length);
-      }
-    }*/
   //-------------Drag&Drop------------------------------------
     let objects = [
-      { el: null, id: 'header', label: 'Header' },
-      { el: null, id: 'footer', label: 'Footer' },
-      { el: null, id: 'toc', label: 'Indice' },
-      { el: null, id: 'text', label: 'Testo' },
-      { el: null, id: 'row', label: 'Riga Vuota' },
-      { el: null, id: 'column', label: 'Colonna' },
-      { el: null, id: 'table', label: 'Tabella' },
-      { el: null, id: 'list', label: 'Lista' },
-      { el: null, id: 'svg', label: 'SVG' },
-      { el: null, id: 'image', label: 'Immagine' }
+      { el: null, id: 'header', label: dictionary.label_header},
+      { el: null, id: 'footer', label: dictionary.label_footer},
+      { el: null, id: 'toc', label: dictionary.label_index},
+      { el: null, id: 'text', label: dictionary.label_text},
+      { el: null, id: 'row', label: dictionary.label_row},
+      { el: null, id: 'column', label: dictionary.label_column},
+      { el: null, id: 'table', label: dictionary.label_table},
+      { el: null, id: 'list', label: dictionary.label_list},
+      { el: null, id: 'svg', label: dictionary.label_svg},
+      { el: null, id: 'image', label: dictionary.label_image}
     ]; //bottoni per l'aggiunta degli elementi
 
     var buttons = [];
@@ -1889,7 +1957,21 @@
     var cells = [];
     let selectedFileContent = "";
 
+    function applyCSSVariables() {
+      document.documentElement.style.setProperty('--button-color', css_root['--button-color']||"#333");
+      document.documentElement.style.setProperty('--button-background', css_root['--button-background']||"#f4f4f4");
+      document.documentElement.style.setProperty('--font', css_root['--font']||"Segoe UI");
+      document.documentElement.style.setProperty('--fontsize', css_root['--fontsize']||"2em");
+    }
+
     onMount(() => {
+      if (debug){
+        console.log("fileListPassed",fileListpassed);
+      } 
+      checkFooterAndExecute;
+      checkHeaderAndExecute;
+      console.log("css_root = ",css_root);
+      applyCSSVariables();
       buttons = document.querySelectorAll('.addButton');
       dropzones = document.querySelectorAll('.dropzone');
       cells = document.querySelectorAll('.cella');
@@ -2221,8 +2303,8 @@
       });
     }
     function handleDragStartFile(event) {
-      for (let i = 0; i < fileList.length; i++) {
-        const file = fileList[i];
+      for (let i = 0; i < fileListpassed.length; i++) {
+        const file = fileListpassed[i];
         if (file.name.trim() === event.currentTarget.textContent.trim()) {
           console.log("ok");
           selectedFileContent = file.name;        
@@ -2255,10 +2337,29 @@
       });
     }
 
+  //----------------Toggle---------------------------------
+  function toggle(){
+    const toggleButton = document.getElementById('toggleButton');
+    const container = document.getElementById('file_list');
+    const destra = document.getElementById('destra');
+    const elements = document.getElementById("elements");
+    if (container.style.display === 'none') {
+      container.style.display = 'block';
+      toggleButton.style.backgroundColor =  "#8e8e8e";
+      toggleButton.style.color = "white";
+      destra.style["grid-template-rows"] = "46% 54%";
+      elements.style["max-height"] = "41vh";
+    } else {
+      container.style.display = 'none';
+      toggleButton.style.backgroundColor =  "var(--button-background, #f4f4f4)";
+      toggleButton.style.color = "var(--button-color, #333)";
+      destra.style["grid-template-rows"] = "12% 88%";
+      elements.style["max-height"] = "67vh";
+    };
+  }
 
 </script>
-
-    <main>
+    <body>
       <div>
         {#if generatedPdfData}
         <PDFPreview pdfData = {generatedPdfData} />
@@ -2267,7 +2368,7 @@
     <div class="container">
       <div class = "sinistra">
         <div class="cont_sinistra" id="fixedElement2">
-          <h1 class="responsive-heading">Aggiungi:</h1>
+          <h1 class="responsive-heading">{dictionary.add}:</h1>
           {#each objects as { el, id, label }}
             <button
               type="button"
@@ -2283,30 +2384,36 @@
           {/each}
         </div>
       </div>
-      <div class = "destra">  
-        <div class ="file_list">
-          <h1>Lista dei file:</h1>
-            {#if fileList.length > 0}
-              <div class ="list"> 
-              {#each fileList as file}
-              <single_file
-                  type="button"
-                  draggable="true"
-                  on:dragstart={handleDragStartFile}
-                  on:dragend={handleDragEndFile}
-                  class = "fileButton"
-              >
-                  {file.name}
-              </single_file>
-              {/each}
-            </div>
-            <!--<p>{file.content}</p>-->
-            {:else}
-              <p>Loading files...</p>
-            {/if}
+      <div class = "destra" id = "destra">  
+        <div class = "right1">
+          <div class ="file_list" id = "file_list" style = "display: none">
+            <h9>{dictionary.list_file}:</h9>
+              {#if fileListpassed.length > 0}
+                <div class ="list"> 
+                {#each fileListpassed as file}
+                <single_file
+                    type="button"
+                    draggable="true"
+                    on:dragstart={handleDragStartFile}
+                    on:dragend={handleDragEndFile}
+                    class = "fileButton"
+                >
+                    {file.name}
+                </single_file>
+                {/each}
+              </div>
+              <!--<p>{file.content}</p>-->
+              {:else}
+                <p>Loading files...</p>
+              {/if}
+          </div>
+          <!--<div class="dropzone lower-dropzone third" on:dragenter={(e) => handleDragEnter(e, 0)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, 0)} on:dragover={handleDragOver} id="drop_zone"></div>-->
+          <button id="toggleButton" on:click={() => toggle()}>Files</button>
+          <div class = "separator">
+          </div>
         </div>
-        <!--<div class="dropzone lower-dropzone third" on:dragenter={(e) => handleDragEnter(e, 0)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, 0)} on:dragover={handleDragOver} id="drop_zone"></div>-->
-        <h1>Crea PDF</h1>
+        <div class = "elements-list" id = "elements">
+        <h1>{dictionary.create_PDF}</h1>
         <form class="elements" on:submit|preventDefault={handleSubmit}>
           <div class = "cella">
             <h1>Margini della pagina  <grey> ( dimensioni totali 595 x 942 pixels ).</grey></h1>
@@ -2334,35 +2441,35 @@
             {#if item.type === 'header'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>Header</h1> 
-                  <button class = "rimuovi" type="button" on:click={() => removeHeader(item.elemento.id)}>Rimuovi</button>
+                  <h1>{dictionary.header}</h1> 
+                  <button class = "rimuovi" type="button" on:click={() => removeHeader(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
                 <div class= "element-header"> 
                   <div class = "cont-allignment">
                     <label> 
-                      <p>Contenuto Header: </p>
+                      <p>{dictionary.content_header}: </p>
                     <textarea class="autosize-textarea dropzone_Text dropnew"   on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={item.elemento.testo} on:input={handleInput} on:input:resize={adjustTextareaHeight} id={`textareaHeader-${i}`} /> 
                     <!--<button class = "boldconverter" on:click={() => applyBold(`textareaHeader-${i}`)}>Bold</button>-->
                     </label>
-                    <p>Alignment: </p>
+                    <p>{dictionary.alignment}: </p>
                     <label> 
                       <input type="radio" bind:group={item.elemento.alignment} value="left"/> 
-                      Sinistra
+                      {dictionary.left}
                     </label>
                     <label> 
                       <input type="radio" bind:group={item.elemento.alignment} value="center"/> 
-                      Centro
+                      {dictionary.center}
                     </label>
                     <label> 
                       <input type="radio" bind:group={item.elemento.alignment} value="right"/> 
-                      Destra
+                      {dictionary.right}
                     </label>
                   </div>
                   <div class = "style-margin">
                     <div class = "style&fontsize">
                       <div class ="style">
                         <label> 
-                          <p>Style:</p>
+                          <p>{dictionary.style}:</p>
                           <!-- svelte-ignore a11y-mouse-events-have-key-events -->
                           <select id="style-select" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFillHeader(e, item.elemento.id)}>  
                             <option value="normal"> Default </option>
@@ -2376,7 +2483,7 @@
                       <div class ="font">
                         <label for="font">Font:</label>
                         <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
-                            <option value="">Seleziona</option>
+                            <option value="">{dictionary.select}</option>
                             <option value="Roboto">Roboto</option>
                             <option value="RobotoSerif">RobotoSerif</option>
                             <option value="Raleway">Raleway</option>
@@ -2385,9 +2492,9 @@
                         </select>
                       </div>
                       <div class ="fontsize">
-                        <label for="fontsizes"><p>Grandezza del font:</p></label>
+                        <label for="fontsizes"><p>{dictionary.fontsize}:</p></label>
                         <select id="fontsizes-header" bind:value={item.elemento.fontsize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
-                          <option value="">Seleziona</option>
+                          <option value="">{dictionary.select}</option>
                           <option value="5">5</option>
                           <option value="6">6</option>
                           <option value="7">7</option>
@@ -2418,17 +2525,17 @@
                       </div>
                     </div>
                     <div class = "margini">
-                      <p>Margini:</p>
+                      <p>{dictionary.margins}:</p>
                       <label>
-                        Sinstra:
+                        {dictionary.left}:
                         <input type="number" bind:value={item.elemento.margin.left} min="20" max = "595"/> 
                       </label>
                       <label>
-                        Destra:
+                        {dictionary.right}:
                         <input type="number" bind:value={item.elemento.margin.right} min="20" max = "595"/> 
                       </label>
                       <label>
-                        Sopra:
+                        {dictionary.top}:
                         <input type="number" bind:value={item.elemento.margin.top} min="20" max={topMarginValue - 15}  on:change={(e) => ChangeFontsizeonMarginHeader()}/> 
                       </label>
                       <!--<label>
@@ -2437,7 +2544,7 @@
                       </label>-->
                     </div>
                     <div class = "preview_height">
-                      <p>Numero di parole approssimativo per la preview:</p>
+                      <p>{dictionary.words_preview}:</p>
                       <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
                     </div>
                   </div>
@@ -2454,33 +2561,33 @@
             {:else if item.type === 'footer'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>Footer</h1><button  class = "rimuovi" type="button" on:click={() => removeFooter(item.elemento.id)}>Rimuovi</button>
+                  <h1>{dictionary.label_footer}</h1><button  class = "rimuovi" type="button" on:click={() => removeFooter(item.elemento.id)}>Rimuovi</button>
                 </div>
                 <div class= "element-header"> 
                   <div class = "cont-allignment">
                     <label> 
-                      <p>Contenuto Footer: </p>
+                      <p>{dictionary.content_footer}: </p>
                       <textarea class="autosize-textarea dropzone_Text dropnew" bind:value={item.elemento.testo} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                     </label>
-                    <p>Alignment: </p>
+                    <p>{dictionary.alignment}: </p>
                     <label> 
                     <input type="radio" bind:group={item.elemento.alignment} value="left"/> 
-                      Sinistra
+                    {dictionary.left}
                     </label>
                     <label> 
                       <input type="radio" bind:group={item.elemento.alignment} value="center"/> 
-                        Centro
+                      {dictionary.center}
                     </label>
                     <label> 
                       <input type="radio" bind:group={item.elemento.alignment} value="right"/> 
-                        Destra
+                      {dictionary.right}
                     </label>
                   </div>
                   <div class = "style-margin">
                     <div class = "style&fontsize">
                       <div class ="style">
                         <label> 
-                          <p>Style:</p>
+                          <p>{dictionary.style}:</p>
                           <!-- svelte-ignore a11y-mouse-events-have-key-events -->
                           <select id="style-select" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFillHeader(e, item.elemento.id)}>  
                             <option value="normal"> Default </option>
@@ -2494,7 +2601,7 @@
                       <div class ="font">
                         <label for="font">Font:</label>
                         <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
-                            <option value="">Seleziona</option>
+                            <option value="">{dictionary.select}</option>
                             <option value="Roboto">Roboto</option>
                             <option value="RobotoSerif">RobotoSerif</option>
                             <option value="Raleway">Raleway</option>
@@ -2503,9 +2610,9 @@
                         </select>
                       </div>
                       <div class ="fontsize">
-                        <label for="fontsizes"><p>Grandezza del font:</p></label>
+                        <label for="fontsizes"><p>{dictionary.fontsize}:</p></label>
                         <select id="fontsizes-footer" bind:value={item.elemento.fontsize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
-                            <option value="">Seleziona</option>
+                            <option value="">{dictionary.select}</option>
                             <option value="5">5</option>
                             <option value="6">6</option>
                             <option value="7">7</option>
@@ -2536,13 +2643,13 @@
                       </div>
                     </div>
                     <div class = "margini">
-                      <p>Margini:</p>
+                      <p>{dictionary.margins}:</p>
                       <label>
-                        Sinstra:
+                        {dictionary.left}:
                         <input type="number" bind:value={item.elemento.margin.left} min="20" max = "595"/> 
                       </label>
                       <label>
-                        Destra:
+                        {dictionary.right}:
                         <input type="number" bind:value={item.elemento.margin.right} min="20" max = "595"/> 
                       </label>
                       <!--<label>
@@ -2550,12 +2657,12 @@
                         <input type="number" bind:value={item.elemento.margin.top} min="0" max = {topMarginValue -15} on:change={(e) => ChangeFontsizeonMarginFooter()}/> 
                       </label>-->
                       <label>
-                        Sotto:
+                        {dictionary.bottom}:
                         <input type="number" bind:value={item.elemento.margin.bottom} min="20" max = {bottomMarginValue -15}/> 
                       </label>
                     </div>
                     <div class = "preview_height">
-                      <p>Numero di parole approssimativo per la preview:</p>
+                      <p>{dictionary.words_preview}:</p>
                       <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
                     </div>
                   </div>
@@ -2569,18 +2676,18 @@
             {#if item.type === 'field'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>Testo</h1><button  class = "rimuovi" type="button" on:click={() => removeField(item.elemento.id)}>Rimuovi</button>
+                  <h1>{dictionary.label_text}</h1><button  class = "rimuovi" type="button" on:click={() => removeField(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
                   <div class= "element">
                     <div class = "contenuto_field">
-                        <p>Contenuto :<small-grey> (shift + invio per andare a capo)</small-grey></p> 
+                        <p>{dictionary.content} :<small-grey> ({dictionary.new_line})</small-grey></p> 
                         <textarea class="autosize-textarea dropzone_Text" bind:value={item.elemento.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                     </div>
                     
                       <div class = "style&tipo">
                         <div class ="style">
                           <label> 
-                            <p>Style:</p>
+                            <p>{dictionary.style}:</p>
                             <!-- svelte-ignore a11y-mouse-events-have-key-events -->
                             <select id="style-select" bind:value={item.elemento.selectedstyle} name="style-option" on:change={(e) => ChangeFontandFill(e, item.elemento.id)}>  
                               <option value="normal"> Default </option>
@@ -2601,27 +2708,27 @@
                               Italics
                           </label>
                         </div>
-                        <div class = "pbreak">
-                          Page Break:
-                          <label>
-                            <input type="radio" bind:group={item.elemento.pagebreak} value="before" />
-                            Prima
-                          </label>
-                          <label>
-                            <input type="radio" bind:group={item.elemento.pagebreak} value="after" />
-                            Dopo
-                          </label>
-                          <label>
-                            <input type="radio" bind:group={item.elemento.pagebreak} value="" />
-                            Nessuno
-                          </label>
-                        </div>
+                      </div>
+                      <div class = "pbreak">
+                        {dictionary.page_break}:
+                        <label>
+                          <input type="radio" bind:group={item.elemento.pagebreak} value="before" />
+                          {dictionary.before}
+                        </label>
+                        <label>
+                          <input type="radio" bind:group={item.elemento.pagebreak} value="after" />
+                          {dictionary.after}
+                        </label>
+                        <label>
+                          <input type="radio" bind:group={item.elemento.pagebreak} value="" />
+                          {dictionary.none}
+                        </label>
                       </div>
                       <div class = "f&f_size">
                         <div class ="font">
                           <label for="font">Font:</label>
                           <select id="font" bind:value={item.elemento.selectedfont}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
-                              <option value="">Seleziona</option>
+                              <option value="">{dictionary.select}</option>
                               <option value="Roboto">Roboto</option>
                               <option value="RobotoSerif">RobotoSerif</option>
                               <option value="Raleway">Raleway</option>
@@ -2630,9 +2737,9 @@
                           </select>
                         </div>
                         <div class ="fontsize">
-                          <label for="fontsizes"><p>Grandezza del font:</p></label>
+                          <label for="fontsizes"><p>{dictionary.fontsize}:</p></label>
                           <select id="fontsizes" bind:value={item.elemento.selectedfontsize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
-                              <option value="">Seleziona</option>
+                              <option value="">{dictionary.select}</option>
                               <option value="5">5</option>
                               <option value="6">6</option>
                               <option value="7">7</option>
@@ -2661,15 +2768,15 @@
                               <option value="30">30</option>
                           </select>
                         </div>
-                        <div class = "preview_height">
-                          <p>Numero di parole approssimativo per la preview:</p>
-                          <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
-                        </div>
+                      </div>
+                      <div class = "preview_height">
+                        <p>{dictionary.words_preview}:</p>
+                        <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
                       </div>
                     
                     <div class = "field_indice">
                       <label>
-                        <h2> Collega all'indice: </h2>
+                        <h2> {dictionary.bind_index}: </h2>
                         <select id = "select_indice" bind:value={item.elemento.tocItem}  >
                           {#each contenuto as item}
                             {#if item.type === 'toc'}
@@ -2686,34 +2793,34 @@
             {:else if item.type === 'row'}
               <div class = "cella2">
                 <div class = "testo">
-                  <h2>Riga Vuota</h2><button  class = "rimuovi" type="button" on:click={() => removeRow(item.elemento.id)}>Rimuovi</button>
+                  <h2>{dictionary.label_row}</h2><button  class = "rimuovi" type="button" on:click={() => removeRow(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
               </div>
             {:else if item.type === 'column'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>Container Colonne</h1><button  class = "rimuovi" type="button" on:click={() => removeColumn(item.elemento.id)}>Rimuovi</button>
+                  <h1>{dictionary.columns_container}</h1><button  class = "rimuovi" type="button" on:click={() => removeColumn(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
                   <div class="element">
                     <div class = "distanza">
                       <label> 
-                        Distanza tra le colonne: 
+                        {dictionary.column_gap}: 
                         <input type="number" bind:value={item.gap}/> px
                       </label>
                     </div>
                     <div class = "alignment">
-                      <p>Alignment: </p>
+                      <p>{dictionary.alignment}: </p>
                       <label> 
                       <input type="radio" bind:group={item.alignment} value="left"/> 
-                        Sinistra
+                      {dictionary.left}
                       </label>
                       <label> 
                         <input type="radio" bind:group={item.alignment} value="center"/> 
-                          Centro
+                        {dictionary.center}
                       </label>
                       <label> 
                         <input type="radio" bind:group={item.alignment} value="right"/> 
-                          Destra
+                        {dictionary.right}
                       </label>
                     </div>
 
@@ -2721,13 +2828,13 @@
                       {#if field.type === "field"}
                         <div class = "cella">
                         <div class = "testo">
-                          <h2>Colonna {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>Rimuovi colonna</button>
+                          <h2>{dictionary.label_column} {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>{dictionary.button_remove_column}</button>
                         </div>   
                           <div class="element">  
                             <div class = "contenuto_field">
                               <!-- svelte-ignore a11y-label-has-associated-control -->
                               <label> 
-                                <p>Contenuto: </p><small-grey> (shift + invio per andare a capo)</small-grey>
+                                <p>{dictionary.content}: </p><small-grey> ({dictionary.new_line})</small-grey>
                               </label>
                               <textarea class="autosize-textarea dropzone_Text drop2" bind:value={field.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                             </div>
@@ -2735,7 +2842,7 @@
                               <div class = "style&tipo">
                                 <div class ="style">
                                   <label> 
-                                    <p>Style:</p>
+                                    <p>{dictionary.style}:</p>
                                     <!-- svelte-ignore a11y-mouse-events-have-key-events -->
                                     <select id="style-select" bind:value={field.selectedstyle} name="style-option" on:change={(e) => ChangeFontandFillColumn(e, item.elemento.id,field.id)}>  
                                       <option value="normal" > Default </option>
@@ -2757,18 +2864,18 @@
                                   </label>
                                 </div>
                                 <div class = "pbreak">
-                                  Page Break:
+                                  {dictionary.page_break}:
                                   <label>
                                     <input type="radio" bind:group={item.elemento.pagebreak} value="before" />
-                                    Prima
+                                    {dictionary.before}
                                   </label>
                                   <label>
                                     <input type="radio" bind:group={item.elemento.pagebreak} value="after" />
-                                    Dopo
+                                    {dictionary.after}
                                   </label>
                                   <label>
                                     <input type="radio" bind:group={item.elemento.pagebreak} value="" />
-                                    Nessuno
+                                    {dictionary.none}
                                   </label>
                                 </div>
                               </div>
@@ -2777,7 +2884,7 @@
                               <div class ="font">
                                 <label for="font">Font:</label>
                                 <select id="font" bind:value={field.selectedfont}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
-                                  <option value="">Seleziona</option>
+                                  <option value="">{dictionary.select}</option>
                                   <option value="Roboto">Roboto</option>
                                   <option value="RobotoSerif">RobotoSerif</option>
                                   <option value="Raleway">Raleway</option>
@@ -2786,9 +2893,9 @@
                                 </select>
                               </div>
                               <div class ="fontsize">
-                                <label for="fontsizes"><p>Grandezza del font:</p></label>
+                                <label for="fontsizes"><p> {dictionary.fontsize}:</p></label>
                                 <select id="fontsizes" bind:value={field.selectedfontsize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
-                                  <option value="">Seleziona</option>
+                                  <option value="">{dictionary.select}</option>
                                   <option value="5">5</option>
                                   <option value="6">6</option>
                                   <option value="7">7</option>
@@ -2821,92 +2928,92 @@
                             <div class= "larghezza">
                               <label>
                                 <input type="radio" bind:group={field.width} value="auto"  />
-                                Larghezza auto
+                                {dictionary.width_auto}
                               </label>
                               <label>
                                 <input type="radio" bind:group={field.width} value="*" />
-                                Larghezza Fill
+                                {dictionary.width_fill}
                               </label>
                               <label class ="labellarghezza">
                                 <input type="radio" bind:group={field.width} value="custom"/>
-                                <p>Larghezza :</p>
+                                <p>{dictionary.width} :</p>
                                 <input id = "1" type="number" bind:value={field.width}>
                               </label>
                             </div>
-                            <div class = "preview_height">
-                              <p>Numero di parole approssimativo per la preview:</p>
-                              <input type="number" bind:value = {field.test_text} min="1" /> 
-                            </div>
+                          </div>
+                          <div class = "preview_height">
+                            <p>{dictionary.words_preview}:</p>
+                            <input type="number" bind:value = {field.test_text} min="1" /> 
                           </div>
                         </div>
                       {:else if field.type === "IMG"}
                         <div class = "cella">
                           <div class = "testo">
-                            <h2>Colonna {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>Rimuovi colonna</button>
+                            <h2>{dictionary.label_column} {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>{dictionary.button_remove_column}</button>
                           </div>  
                           <div class="svg-element">
                             <div class = "placeHolderSVG"> {field.imgContent}</div>
                             <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
                             <!-- svelte-ignore missing-declaration -->
                             <input  class = "custom-file-input" type="file" accept=".jpg , .png" on:change={handleFileIMGChange(event,field.id)} />
-                            <h2>Dimensioni:</h2>
+                            <h2>{dictionary.dimensions}:</h2>
                             <div class = "dimensioni_svg">
                               <label2>
                                 <input type= "radio" bind:group={field.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,field.id)} value = "true">
-                                Dimensioni massime<small-grey2>(riempie un rettangolo senza distorsione)</small-grey2>
+                                {dictionary.max_dimensions}<small-grey2>({dictionary.fill_expl})</small-grey2>
                               </label2>
                               <div class = {"dim_max_img" + field.id}>
                                 <div class = "dimensioni">
                                   <label7>
-                                    Larghezza Massima:
+                                    {dictionary.max_width}:
                                     <input type = "number" bind:value = {field.larghezza_fit} min = 10 max = 595>
                                   </label7>
                                   <label7>
-                                    Altezza Massima:
+                                    {dictionary.max_height}:
                                     <input type = "number" bind:value = {field.altezza_fit} min = 10 max = 841 >
                                   </label7>
                                 </div>
                               </div>
                               <label2>
                                 <input type= "radio" bind:group={field.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,field.id)} value = "false">
-                                Dimensioni assolute<small-grey2>(adatta a un rettangolo con distorsione)</small-grey2>
+                                {dictionary.abs_dimensions}<small-grey2>({dictionary.abs_expl})</small-grey2>
                               </label2>
                               <div class = {"dim_abs_img" + field.id}>
                                 <div class = "dimensioni">
                                   <label7>
-                                    Larghezza:
+                                    {dictionary.width}:
                                     <input type = "number" bind:value = {field.larghezza} min = 10 max = 595>
                                   </label7>
                                   <label7>
-                                    Altezza:
+                                    {dictionary.height}:
                                     <input type = "number" bind:value = {field.altezza} min = 10 max = 841 >
                                   </label7>
                                 </div>
                               </div>
                               <div class = "posizione">
-                                <p>Alignment: </p>
+                                <p>{dictionary.alignment}: </p>
                                 <label> 
                                   <input type="radio" bind:group={field.alignment} value="left"/> 
-                                  Sinistra
+                                  {dictionary.left}
                                 </label>
                                 <label> 
                                   <input type="radio" bind:group={field.alignment} value="center"/> 
-                                  Centro
+                                  {dictionary.center}
                                 </label>
                                 <label> 
                                   <input type="radio" bind:group={field.alignment} value="right"/> 
-                                  Destra
+                                  {dictionary.right}
                                 </label>    
                               </div>
-                              <h2>Margini dell' immagine:</h2>
+                              <h2>{dictionary.img_margins}:</h2>
                               <div class = "margini_pagina">
-                                Sinistra:
+                                {dictionary.left}:
                                 <input type="number" class = "marginiIMG" bind:value={field.imgMargins[0]} oninput="HandleMarginiIMG()" min = 0 max = 595 >
-                                Superiore:
+                                {dictionary.top}:
                                 <input type="number" class = "marginiIMG" bind:value={field.imgMargins[1]} oninput="HandleMarginiIMG()" min = 0 max = 841>
-                                Destra:
+                                {dictionary.right}:
                                 <input type="number" class = "marginiIMG" bind:value={field.imgMargins[2]} oninput="HandleMarginiIMG()" min = 0 max = 595>
-                                Inferiore:
+                                {dictionary.bottom}:
                                 <input type="number" class = "marginiIMG" bind:value={field.imgMargins[3]} oninput="HandleMarginiIMG()" min = 0 max = 841>
                               </div>
                             </div>
@@ -2915,71 +3022,71 @@
                       {:else if field.type === "SVG"}
                         <div class = "cella">
                           <div class = "testo">
-                            <h2>Colonna {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>Rimuovi colonna</button>
+                            <h2>{dictionary.label_column} {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>{dictionary.button_remove_column}</button>
                           </div>  
                           <div class="svg-element">
                             <div class = "placeHolderSVG"> {field.imgContent}</div>
                             <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
                             <!-- svelte-ignore missing-declaration -->
                             <input  class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,field.id)} />
-                            <h2>Dimensioni:</h2>
+                            <h2>{dictionary.dimensions}:</h2>
                             <div class = "dimensioni_svg">
                               <label2>
                                 <input type= "radio" bind:group={field.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,field.id)} value = "true">
-                                Dimensioni massime<small-grey2>(riempie un rettangolo senza distorsione)</small-grey2>
+                                {dictionary.max_dimensions}<small-grey2>({dictionary.fill_expl})</small-grey2>
                               </label2>
                               <div class = {"dim_max_img" + field.id}>
                                 <div class = "dimensioni">
                                   <label7>
-                                    Larghezza Massima:
+                                    {dictionary.max_width}:
                                     <input type = "number" bind:value = {field.larghezza_fit} min = 10 max = 595>
                                   </label7>
                                   <label7>
-                                    Altezza Massima:
+                                    {dictionary.max_height}:
                                     <input type = "number" bind:value = {field.altezza_fit} min = 10 max = 841 >
                                   </label7>
                                 </div>
                               </div>
                               <label2>
                                 <input type= "radio" bind:group={field.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,field.id)} value = "false">
-                                Dimensioni assolute<small-grey2>(adatta a un rettangolo con distorsione)</small-grey2>
+                                {dictionary.abs_dimensions}<small-grey2>({dictionary.abs_expl})</small-grey2>
                               </label2>
                               <div class = {"dim_abs_img" + field.id}>
                                 <div class = "dimensioni">
                                   <label7>
-                                    Larghezza:
+                                    {dictionary.width}:
                                     <input type = "number" bind:value = {field.larghezza} min = 10 max = 595>
                                   </label7>
                                   <label7>
-                                    Altezza:
+                                    {dictionary.height}:
                                     <input type = "number" bind:value = {field.altezza} min = 10 max = 841 >
                                   </label7>
                                 </div>
                               </div>
                               <div class = "posizione">
-                                <p>Alignment: </p>
+                                <p>{dictionary.alignment}: </p>
                                 <label> 
                                   <input type="radio" bind:group={field.alignment} value="left"/> 
-                                  Sinistra
+                                  {dictionary.left}
                                 </label>
                                 <label> 
                                   <input type="radio" bind:group={field.alignment} value="center"/> 
-                                  Centro
+                                  {dictionary.center}
                                 </label>
                                 <label> 
                                   <input type="radio" bind:group={field.alignment} value="right"/> 
-                                  Destra
+                                  {dictionary.right}
                                 </label>    
                               </div>
-                              <h2>Margini dell' immagine:</h2>
+                              <h2>{dictionary.svg_margins}:</h2>
                               <div class = "margini_pagina">
-                                Sinistra:
+                                {dictionary.left}:
                                 <input type="number" class = "marginiIMG" bind:value={field.imgMargins[0]} oninput="HandleMarginiIMG()" min = 0 max = 595 >
-                                Superiore:
+                                {dictionary.top}:
                                 <input type="number" class = "marginiIMG" bind:value={field.imgMargins[1]} oninput="HandleMarginiIMG()" min = 0 max = 841>
-                                Destra:
+                                {dictionary.right}:
                                 <input type="number" class = "marginiIMG" bind:value={field.imgMargins[2]} oninput="HandleMarginiIMG()" min = 0 max = 595>
-                                Inferiore:
+                                {dictionary.bottom}:
                                 <input type="number" class = "marginiIMG" bind:value={field.imgMargins[3]} oninput="HandleMarginiIMG()" min = 0 max = 841>
                               </div>
                             </div>
@@ -2988,9 +3095,9 @@
                       {/if}
                       {/each}
                     <div class ="bottonicolonne">
-                      <button type="button" on:click={() => addFieldtoColumn(item.elemento.id)}>Aggiungi testo</button>
-                      <button type="button" on:click={() => addIMGtoColumn(item.elemento.id)}>Aggiungi Immagine</button>
-                      <button type="button" on:click={() => addSVGtoColumn(item.elemento.id)}>Aggiungi SVG</button>
+                      <button type="button" on:click={() => addFieldtoColumn(item.elemento.id)}>{dictionary.add_text}</button>
+                      <button type="button" on:click={() => addIMGtoColumn(item.elemento.id)}>{dictionary.add_img}</button>
+                      <button type="button" on:click={() => addSVGtoColumn(item.elemento.id)}>{dictionary.add_svg}</button>
                     </div>
                   </div>
                 <div class="dropzone upper-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
@@ -2999,18 +3106,18 @@
             {:else if item.type === 'table'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>Tabella</h1><button  class = "rimuovi-riga" type="button" on:click={() => removeTable(item.elemento.id)}>Rimuovi tabella</button>
+                  <h1>{dictionary.label_table}</h1><button  class = "rimuovi-riga" type="button" on:click={() => removeTable(item.elemento.id)}>{dictionary.button_remove_table}</button>
                 </div>
                 <div class="tabella-element">
-                  <h2>Layout</h2>
+                  <h2>{dictionary.layout}</h2>
                   <div class = "layout">
                     <label>
                       <input type="radio" bind:group={item.elemento.layout} value="Custom" on:change = {HandleChangeLayoutTab(event,item.elemento.id)} />
-                      Custom
+                      {dictionary.custom}
                     </label>
                     <label>
                       <input type="radio" bind:group={item.elemento.layout} value="noBorders" on:change = {HandleChangeLayoutTab(event,item.elemento.id)}/>
-                      Nessun bordo
+                      {dictionary.no_border}
                     </label>
                     <!--<label>
                       <input type="radio" bind:group={item.elemento.layout} value="headerLineOnly" />
@@ -3018,13 +3125,7 @@
                     </label>-->
                     <label>
                       <input type="radio" bind:group={item.elemento.layout} value="lightHorizontalLines"on:change = {HandleChangeLayoutTab(event,item.elemento.id)}/>
-                      Solo righe orizzontali
-                    </label>
-                  </div>
-                  <div class = "colore_tabella">
-                    <label class ="label3"> 
-                      Colore della tabella
-                      <input type="color" bind:value={item.elemento.color}/> 
+                      {dictionary.horizontal_lines}
                     </label>
                   </div>
                   <div class = "tipo&page">
@@ -3039,18 +3140,18 @@
                       </label>
                     </div>
                     <div class = "pbreak">
-                      Page Break:
+                      {dictionary.page_break}:
                       <label>
                         <input type="radio" bind:group={item.elemento.pagebreak} value="before" />
-                        Prima
+                        {dictionary.before}
                       </label>
                       <label>
                         <input type="radio" bind:group={item.elemento.pagebreak} value="after" />
-                        Dopo
+                        {dictionary.after}
                       </label>
                       <label>
                         <input type="radio" bind:group={item.elemento.pagebreak} value="" />
-                        Nessuno
+                        {dictionary.none}
                       </label>
                     </div>
                   </div>
@@ -3058,7 +3159,7 @@
                     <div class ="font">
                       <label for="font">Font:</label>
                       <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
-                          <option value="">Seleziona</option>
+                          <option value="">{dictionary.select}</option>
                           <option value="Roboto">Roboto</option>
                           <option value="RobotoSerif">RobotoSerif</option>
                           <option value="Raleway">Raleway</option>
@@ -3067,9 +3168,9 @@
                       </select>
                     </div>
                     <div class ="fontsize">
-                      <label for="fontsizes"><p>Grandezza del font:</p></label>
+                      <label for="fontsizes"><p>{dictionary.fontsize}:</p></label>
                       <select id="fontsizes" bind:value={item.elemento.fontsize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
-                          <option value="">Seleziona</option>
+                          <option value="">{dictionary.select}</option>
                           <option value="5">5</option>
                           <option value="6">6</option>
                           <option value="7">7</option>
@@ -3245,15 +3346,21 @@
                       <div class ="altezza">
                         <label>
                           <input type="radio" bind:group={field.tipoaltezza_riga} value="auto" on:change={HandleChangeAltezzaColonna(event,field.id)} />
-                          Altezza auto
+                          {dictionary.auto_height}
                         </label>
                         <label>
                           <input type="radio" bind:group={field.tipoaltezza_riga} value="custom" on:change={HandleChangeAltezzaColonna(event,field.id)}/>
-                          <p>Altezza :</p>
+                          <p>{dictionary.height} :</p>
                           <input id = {field.id} class="altezza_colonna" type="number" bind:value={field.altezza_riga} min = 2 disabled>
                         </label>
+                        <div class = "colore_tabella">
+                          <label class ="label3"> 
+                            {dictionary.table_color}
+                            <input type="color" bind:value={item.elemento.color}/> 
+                          </label>
+                        </div>
                       </div>
-                      Riga di intestazione
+                      {dictionary.attributes}
                       <div class = "attributes&addcolonna">
                         <div class = "attributes_container">
                           {#each [...Array(field.numero)] as _, index}
@@ -3261,104 +3368,104 @@
                           {/each}
                         </div>
                         <div class ="add&remove">
-                          <button  class = "aggiungi-colonna" type="button" on:click={() => addColonna(item.elemento.id)}>Aggiungi Colonna</button>
-                          <button  class = "aggiungi-colonna" type="button" on:click={() => removeColonna(item.elemento.id)}>Rimuovi Colonna</button>
+                          <button  class = "aggiungi-colonna" type="button" on:click={() => addColonna(item.elemento.id)}>{dictionary.add_column}</button>
+                          <button  class = "aggiungi-colonna" type="button" on:click={() => removeColonna(item.elemento.id)}>{dictionary.button_remove_column}</button>
                         </div>
                       </div>
                         {#if field.settings[0] != -1 && field.settings[2] === "campo"}
                           <div class = "settings">
-                            Dettagli
+                            {dictionary.details}
                             <div class= "larghezza">
                               <label>
                                 <input id={"auto" + field.id} type="radio" bind:group={field.larghezza_colonne[indice_settings]} value="auto" on:change={HandleChangeLarghezzaColonna(event, field.id, indice_settings)}/>
-                                Larghezza auto
+                                {dictionary.auto_width}
                               </label>
                               <label>
                                 <input id={"custom" + field.id} type="radio" value="custom" on:change={HandleChangeLarghezzaColonna(event, field.id,indice_settings)}/>
-                                <p>Larghezza :</p>
+                                <p>{dictionary.width} :</p>
                                 <input id={field.id + "/" + indice_settings} class="larghezza_colonna" type="number" bind:value={field.larghezza_colonne[indice_settings]}/>
                               </label>
                            </div>
                             <div class = "span&color">
                               <label class = "label"> 
-                                Celle del campo: 
+                                {dictionary.cells}: 
                               <input type="number" bind:value={field.colspan[indice_settings]}/> 
                               </label>
                               <label class ="label"> 
-                                Colore del campo: 
+                                {dictionary.cells_color}: 
                               <input type="color" bind:value={field.fillcolor[indice_settings]}/> 
                               </label>
                             </div>
                             <label class ="label5"> 
-                              Bordi: 
+                              {dictionary.borders}: 
                               <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.left[indice_settings]} > 
-                                Sinistra
+                              {dictionary.left}
                               <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.top[indice_settings]} > 
-                                Sopra
+                              {dictionary.top}
                               <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.right[indice_settings]}>
-                                Destra
+                              {dictionary.right}
                               <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.bottom[indice_settings]}>
-                                Sotto
+                              {dictionary.bottom}
                             </label>
                             <label class ="label5"> 
-                              Allineamento: 
+                              {dictionary.alignment}: 
                               <input type="radio" bind:group={field.alignments[indice_settings]} value = "left"/> 
-                                Sinistra
+                              {dictionary.left}
                                 <input type="radio" bind:group={field.alignments[indice_settings]} value = "center"/> 
-                                Centro
+                                {dictionary.center}
                                 <input type="radio" bind:group={field.alignments[indice_settings]} value = "right"/> 
-                                Destra
+                                {dictionary.right}
                             </label>
                             <div class = "preview_height">
-                              <p>Numero di parole approssimativo per la preview:</p>
+                              <p>{dictionary.words_preview}:</p>
                               <input type="number" bind:value = {field.test_text[indice_settings]} min="1" /> 
                             </div>
                           </div>
                         {/if}
                       {:else if field.type === "contenuto_campi"}
-                      Riga {field.id_riga}
+                      {dictionary.row} {field.id_riga}
                       <div class = "content&addriga">
                         <div class = "content_container">
                           {#each [...Array(item.elemento.contenuto_t[0].numero)] as _, index}
                           <input class ="table_cell" type= "text" on:click = {(e) => addSettings(e,item.elemento.id,field.id,index)} on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,index)} on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={field.testo[index]} />
                           {/each}
                         </div> 
-                        <button class = "rimuovi-riga" type="button" on:click={() => removeRiga(item.elemento.id,field.id)}>Rimuovi Riga</button>   
+                        <button class = "rimuovi-riga" type="button" on:click={() => removeRiga(item.elemento.id,field.id)}>{dictionary.button_remove_row}</button>   
                         {#if item.elemento.contenuto_t[0].settings[0] != -1 && item.elemento.contenuto_t[0].settings[2] === "contenuto_campi" && item.elemento.contenuto_t[0].settings[1] === field.id}
                         <div class = "settings" >
-                          Dettagli:
+                          {dictionary.details}:
                           <div class = "span&color">
                             <label class = "label"> 
-                              Celle del campo: 
+                              {dictionary.cells}: 
                             <input type="number" bind:value={field.colspan[indice_settings]}/> 
                             </label>
                             <label class ="label"> 
-                              Colore del campo: 
+                              {dictionary.cells_color}: 
                             <input type="color" bind:value={field.fillcolor[indice_settings]}/> 
                             </label>
                           </div>
                           <label class ="label5"> 
-                            Bordi: 
+                            {dictionary.borders}: 
                             <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.left[indice_settings]} > 
-                              Sinistra
+                            {dictionary.left}
                             <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.top[indice_settings]} > 
-                              Sopra
+                            {dictionary.top}
                             <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.right[indice_settings]}>
-                              Destra
+                            {dictionary.right}
                             <input class = "border{item.elemento.id}" type="checkbox" bind:checked={field.borders.bottom[indice_settings]}>
-                              Sotto
+                            {dictionary.below}
                           </label>
                           <label class ="label5"> 
-                            Allineamento: 
+                            {dictionary.alignment}: 
                             <input type="radio" bind:group={field.alignments[indice_settings]} value = "left"/> 
-                              Sinistra
+                            {dictionary.left}
                               <input type="radio" bind:group={field.alignments[indice_settings]} value = "center"/> 
-                              Centro
+                              {dictionary.center}
                               <input type="radio" bind:group={field.alignments[indice_settings]} value = "right"/> 
-                              Destra
+                              {dictionary.right}
                           </label>
                           <div class = "preview_height">
-                            <p>Numero di parole approssimativo per la preview:</p>
+                            <p>{dictionary.words_preview}:</p>
                             <input type="number" bind:value = {field.test_text[indice_settings]} min="1" /> 
                           </div>
                         </div>
@@ -3366,7 +3473,7 @@
                       </div>             
                       {/if}
                   {/each}
-                  <button  class = "aggiungi-riga" type="button" on:click={() => addRiga(item.elemento.id)}>Aggiungi Riga</button>    
+                  <button  class = "aggiungi-riga" type="button" on:click={() => addRiga(item.elemento.id)}>{dictionary.add_row}</button>    
                 </div>
                 <div class="dropzone upper-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
                 <div class="dropzone lower-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
@@ -3374,13 +3481,13 @@
             {:else if item.type === 'list'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>Lista </h1><button class = "rimuovi" type="button" on:click={() => removeList(item.elemento.id)}>Rimuovi</button>
+                  <h1>{dictionary.label_list} </h1><button class = "rimuovi" type="button" on:click={() => removeList(item.elemento.id)}>Rimuovi</button>
                 </div>
                 <div class="list-element">
                   <div class = "stile_colore">
                     <div class ="style">
                       <label> 
-                        <p>Style:</p>
+                        <p>{dictionary.style}:</p>
                         <!-- svelte-ignore a11y-mouse-events-have-key-events -->
                         <select id="style-select" bind:value={item.elemento.style} name="style-option">  
                           <option value="" disabled> Default </option>
@@ -3394,11 +3501,11 @@
                     
                     <div class = "colore">
                       <label class ="label3"> 
-                        Colore: 
+                        {dictionary.color}: 
                         <input type="color" bind:value={item.elemento.color}/> 
                       </label>
                       <label class ="label3"> 
-                        Colore del puntatore: 
+                        {dictionary.pointer_color}: 
                         <input type="color" bind:value={item.elemento.markerColor}/> 
                       </label>
                     </div>
@@ -3407,13 +3514,13 @@
                     <div class = "list_left1">
                       <label>
                         <input type="radio" bind:group={item.elemento.tipo} value="ol" on:change={disableRadioButtons(event,item.elemento.id)}/>
-                        Ordinata
+                        {dictionary.ordered}
                       </label>
                     </div>
                     <div class = "list-right1">
                       <label>
                         <input type="radio" bind:group={item.elemento.tipo} value="ul" on:change={disableRadioButtons(event,item.elemento.id)} />
-                        Non ordinata
+                        {dictionary.unordered}
                       </label>
                     </div>
                   </div>
@@ -3422,23 +3529,23 @@
                       <div class = {"list_left"  + item.elemento.id}>
                         <label>
                           <input class = "style_index_list" type="radio" bind:group={item.elemento.pointer} value="" />
-                          Numeri
+                          {dictionary.numbers}
                         </label>
                         <label>
                           <input class = "style_index_list" type="radio" bind:group={item.elemento.pointer} value="lower-roman" />
-                          Numeri romani minuscoli
+                          {dictionary.numbers_roman_small}
                         </label>
                         <label>
                           <input class = "style_index_list" type="radio" bind:group={item.elemento.pointer} value="lower-alpha" />
-                          Lettere minuscole
+                          {dictionary.letters_small}
                         </label>
                         <label>
                           <input class = "style_index_list" type="radio" bind:group={item.elemento.pointer} value="upper-roman" />
-                          Numeri romani maiuscoli
+                          {dictionary.numbers_roman_big}
                         </label>
                         <label>
                           <input class = {"style_index_list" + item.elemento.id} type="radio" bind:group={item.elemento.pointer} value="upper-alpha" />
-                          Lettere maiuscole
+                          {dictionary.letters_small}
                         </label>
                       </div>
                     </div>
@@ -3446,11 +3553,11 @@
                       <div class = {"list_right"  + item.elemento.id}>
                         <label>
                           <input class = {"style_pointer_list" + item.elemento.id} type="radio" bind:group={item.elemento.pointer} value="circle" />
-                          Circle
+                          {dictionary.circle}
                         </label>
                         <label>
                           <input class = {"style_pointer_list" + item.elemento.id} type="radio" bind:group={item.elemento.pointer} value="square" />
-                          Square
+                          {dictionary.square}
                         </label>
                       </div>
                     </div>
@@ -3458,17 +3565,17 @@
                   {#each item.elemento.testo as field,i2}  
                   <div class="contenutolista">
                     <label class ="label7"> 
-                      Contenuto riga {i2+1} : 
+                      {dictionary.content_row} {i2+1} : 
                       <textarea class="autosize-textarea dropzone_Text dropnew"   on:drop={(e) => handleDropFile(e,item.elemento.id,field.id,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} bind:value={field.content} on:input={handleInput} on:input:resize={adjustTextareaHeight} />
                     </label>
                     <button class = "rimuovi_riga" type="button" on:click={() => removeFieldFromList(item.elemento.id,field.id)}>Rimuovi</button>
-                    <div class = "preview_height">
-                      <p>Numero di parole approssimativo per la preview:</p>
-                      <input type="number" bind:value = {field.test_text} min="1" /> 
-                    </div>
                   </div> 
+                  <div class = "preview_height">
+                    <p>{dictionary.words_preview}:</p>
+                    <input type="number" bind:value = {field.test_text} min="1" /> 
+                  </div>
                   {/each}       
-                <button class = "aggiungi-riga" type="button" on:click={() => addFieldtoList(item.elemento.id)}>Aggiungi riga</button>
+                <button class = "aggiungi-riga" type="button" on:click={() => addFieldtoList(item.elemento.id)}>{dictionary.add_row}</button>
                 </div>
                 <div class="dropzone upper-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
                 <div class="dropzone lower-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
@@ -3476,71 +3583,71 @@
             {:else if item.type === 'svg'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>SVG </h1>  <button class = "rimuovi" type="button" on:click={() => removeSVG(item.elemento.id)}>Rimuovi</button>
+                  <h1>{dictionary.label_svg} </h1>  <button class = "rimuovi" type="button" on:click={() => removeSVG(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
                 <div class="svg-element">
                   <div class = "placeHolderSVG"> {item.elemento.svgContent}</div>
                   <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG(e,item.elemento.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
                   <!-- svelte-ignore missing-declaration -->       
                     <input class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,item.elemento.id)} />
-                  <h2>Dimensioni:</h2>
+                  <h2>{dictionary.dimensions}:</h2>
                   <div class = "dimensioni_svg">
                     <label2>
                       <input type= "radio" bind:group={item.elemento.isMaxDimensionsSelected} on:change={handleDimensionChange_SVG(event,item.elemento.id)} value = "true">
-                      Dimensioni massime<small-grey2>(riempie un rettangolo senza distorsione)</small-grey2>
+                      {dictionary.max_dimensions}<small-grey2>({dictionary.fill_expl})</small-grey2>
                     </label2>
                     <div class = {"dim_max" + item.elemento.id}>
                       <div class = "dimensioni">
                         <label7>
-                          Larghezza Massima:
+                          {dictionary.max_width}:
                           <input type = "number" bind:value = {item.elemento.larghezza_fit} min = 10 max = 595 >
                         </label7>
                         <label7>
-                          Altezza Massima:
+                          {dictionary.max_height}:
                           <input type = "number" bind:value = {item.elemento.altezza_fit} min = 10 max = 841 >
                         </label7>
                       </div>
                     </div>
                     <label2>
                       <input type= "radio" bind:group={item.elemento.isMaxDimensionsSelected} on:change={handleDimensionChange_SVG(event,item.elemento.id)} value = "false">
-                      Dimensioni assolute<small-grey2>(adatta a un rettangolo con distorsione)</small-grey2>
+                      {dictionary.abs_dimensions}<small-grey2>({dictionary.abs_expl})</small-grey2>
                     </label2>
                     <div class = {"dim_abs" + item.elemento.id}>
                       <div class = "dimensioni">
                         <label7>
-                          Larghezza:
+                          {dictionary.width}:
                           <input type = "number" bind:value = {item.elemento.larghezza} min = 10 max = 595>
                         </label7>
                         <label7>
-                          Altezza:
+                          {dictionary.height}:
                           <input type = "number" bind:value = {item.elemento.altezza} min = 10 max = 841>
                         </label7>
                       </div>
                     </div>
                     <div class = "posizione">
-                      <p>Alignment: </p>
+                      <p>{dictionary.alignment}: </p>
                       <label> 
                         <input type="radio" bind:group={item.elemento.alignment} value="left"/> 
-                        Sinistra
+                        {dictionary.left}
                       </label>
                       <label> 
                         <input type="radio" bind:group={item.elemento.alignment} value="center"/> 
-                        Centro
+                        {dictionary.center}
                       </label>
                       <label> 
                         <input type="radio" bind:group={item.elemento.alignment} value="right"/> 
-                        Destra
+                        {dictionary.right}
                       </label>
                     </div>
-                    <h2>Margini dell' SVG:</h2>
+                    <h2>{dictionary.svg_margins}:</h2>
                     <div class = "margini_pagina">
-                      Sinistra:
+                      {dictionary.left}:
                       <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[0]}  min = 0 max = 595>
-                      Superiore:
+                      {dictionary.top}:
                       <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[1]}  min = 0 max = 841>
-                      Destra:
+                      {dictionary.right}:
                       <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[2]}  min = 0 max = 595>
-                      Inferiore:
+                      {dictionary.bottom}:
                       <input type="number" class = "marginiSVG" bind:value={item.elemento.svgMargins[3]}  min = 0 max = 841>
                     </div>
                   </div>
@@ -3551,71 +3658,71 @@
             {:else if item.type === 'img'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>Image </h1> <button class = "rimuovi" type="button" on:click={() => removeIMG(item.elemento.id)}>Rimuovi</button>
+                  <h1>{dictionary.label_image} </h1> <button class = "rimuovi" type="button" on:click={() => removeIMG(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
                 <div class="svg-element">
                   <div class = "placeHolderSVG"> {item.elemento.imgContent}</div>
                   <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG(e,item.elemento.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
                   <!-- svelte-ignore missing-declaration -->
                   <input  class = "custom-file-input" type="file" accept=".jpeg , .png" on:change={handleFileIMGChange(event,item.elemento.id)} />
-                  <h2>Dimensioni:</h2>
+                  <h2>{dictionary.dimensions}:</h2>
                   <div class = "dimensioni_svg">
                     <label2>
                       <input type= "radio" bind:group={item.elemento.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,item.elemento.id)} value = "true">
-                      Dimensioni massime<small-grey2>(riempie un rettangolo senza distorsione)</small-grey2>
+                      {dictionary.max_dimensions}<small-grey2>({dictionary.fill_expl})</small-grey2>
                     </label2>
                     <div class = {"dim_max_img" + item.elemento.id}>
                       <div class = "dimensioni">
                         <label7>
-                          Larghezza Massima:
+                          {dictionary.max_width}:
                           <input type = "number" bind:value = {item.elemento.larghezza_fit} min = 10 max = 595>
                         </label7>
                         <label7>
-                          Altezza Massima:
+                          {dictionary.max_height}:
                           <input type = "number" bind:value = {item.elemento.altezza_fit} min = 10 max = 841 >
                         </label7>
                       </div>
                     </div>
                     <label2>
                       <input type= "radio" bind:group={item.elemento.isMaxDimensionsSelected} on:change={handleDimensionChange_IMG(event,item.elemento.id)} value = "false">
-                      Dimensioni assolute<small-grey2>(adatta a un rettangolo con distorsione)</small-grey2>
+                      {dictionary.abs_dimensions}<small-grey2>({dictionary.abs_expl})</small-grey2>
                     </label2>
                     <div class = {"dim_abs_img" + item.elemento.id}>
                       <div class = "dimensioni">
                         <label7>
-                          Larghezza:
+                          {dictionary.width}:
                           <input type = "number" bind:value = {item.elemento.larghezza} min = 10 max = 595>
                         </label7>
                         <label7>
-                          Altezza:
+                          {dictionary.height}:
                           <input type = "number" bind:value = {item.elemento.altezza} min = 10 max = 841 >
                         </label7>
                       </div>
                     </div>
                     <div class = "posizione">
-                      <p>Alignment: </p>
+                      <p>{dictionary.alignemnt}: </p>
                       <label> 
                         <input type="radio" bind:group={item.elemento.alignment} value="left"/> 
-                        Sinistra
+                        {dictionary.left}
                       </label>
                       <label> 
                         <input type="radio" bind:group={item.elemento.alignment} value="center"/> 
-                        Centro
+                        {dictionary.center}
                       </label>
                       <label> 
                         <input type="radio" bind:group={item.elemento.alignment} value="right"/> 
-                        Destra
+                        {dictionary.right}
                       </label>    
                     </div>
-                    <h2>Margini dell' immagine:</h2>
+                    <h2>{dictionary.img_margins}:</h2>
                     <div class = "margini_pagina">
-                      Sinistra:
+                      {dictionary.left}:
                       <input type="number" class = "marginiIMG" bind:value={item.elemento.imgMargins[0]} oninput="HandleMarginiIMG()" min = 0 max = 595 >
-                      Superiore:
+                      {dictionary.top}:
                       <input type="number" class = "marginiIMG" bind:value={item.elemento.imgMargins[1]} oninput="HandleMarginiIMG()" min = 0 max = 841>
-                      Destra:
+                      {dictionary.right}:
                       <input type="number" class = "marginiIMG" bind:value={item.elemento.imgMargins[2]} oninput="HandleMarginiIMG()" min = 0 max = 595>
-                      Inferiore:
+                      {dictionary.bottom}:
                       <input type="number" class = "marginiIMG" bind:value={item.elemento.imgMargins[3]} oninput="HandleMarginiIMG()" min = 0 max = 841>
                     </div>
                   </div>
@@ -3626,27 +3733,27 @@
             {:else if item.type === 'toc'}
               <div class = "cella">
                 <div class = "testo">
-                  <h1>Indice</h1><button class = "rimuovi" type="button" on:click={() => removeTOC(item.elemento.id)}>Rimuovi</button>
+                  <h1>{dictionary.label_index}</h1><button class = "rimuovi" type="button" on:click={() => removeTOC(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
                   <div class= "element"> 
                     <div class = "title&id">
                       <label> 
-                        <p>Titolo dell'indice :</p>
+                        <p>{dictionary.title_index} :</p>
                         <textarea class="autosize-textarea dropzone_Text dropnew"  bind:value={item.elemento.text} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave}  /> 
                       </label>
                       <label> 
-                        <p>Identificativo dell'indice :</p>
+                        <p>{dictionary.id_index} :</p>
                         <input type="text" bind:value={item.elemento.id_sec} required/> 
                       </label>
                       <div class = "preview_height">
-                        <p>Numero di parole approssimativo per la preview:</p>
+                        <p>{dictionary.words_preview}:</p>
                       </div>
                       <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
                     </div>
                     <div class= "specifiche_toc">
                       <div class = "fontsize&style">
                         <div class ="fontsize">
-                          <label for="fontsizes"><p>Grandezza del font:</p></label>
+                          <label for="fontsizes"><p>{dictionary.fontsize}:</p></label>
                           <select id="fontsizes" bind:value={item.elemento.fontSize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
                             <option value="5">5</option>
                             <option value="6">6</option>
@@ -3679,7 +3786,7 @@
                         <div class ="font">
                           <label for="font">Font:</label>
                           <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
-                            <option value="">Seleziona</option>
+                            <option value="">{dictionary.select}</option>
                             <option value="Roboto">Roboto</option>
                             <option value="RobotoSerif">RobotoSerif</option>
                             <option value="Raleway">Raleway</option>
@@ -3689,7 +3796,7 @@
                         </div>
                         <div class ="style">
                           <label> 
-                            <p>Stile:</p>
+                            <p>{dictionary.style}:</p>
                             <!-- svelte-ignore a11y-mouse-events-have-key-events -->
                             <select id="style-select" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFill(e, item.elemento.id)}>  
                               <option value="" > Default </option>
@@ -3703,18 +3810,18 @@
                       </div>
                       <div class = "pbreak&type">
                         <div class = "pbreak">
-                          Page Break:
+                          {dictionary.page_break}:
                           <label>
                             <input type="radio" bind:group={item.elemento.pagebreak} value="before" />
-                            Prima
+                            {dictionary.before}
                           </label>
                           <label>
                             <input type="radio" bind:group={item.elemento.pagebreak} value="after" />
-                            Dopo
+                            {dictionary.after}
                           </label>
                           <label>
                             <input type="radio" bind:group={item.elemento.pagebreak} value="" />
-                            Nessuno
+                            {dictionary.none}
                           </label>
                         </div>  
                         <div class ="tipo">
@@ -3736,17 +3843,918 @@
             {/if}
         {/each}
         <div class = "buttons_send_preview">
-          <button value = "invia" type="submit">Invia</button>
-          <button value = "preview" type="submit">Preview</button>
+          <button value = "invia" type="submit">{dictionary.create}</button>
+          <button value = "preview" type="submit">{dictionary.preview}</button>
           <div class="dropzone lower-dropzone third" on:dragenter={(e) => handleDragEnter(e, contenuto.length - 1)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, contenuto.length - 1)} on:dragover={handleDragOver} id="drop_zone"></div>
         </div>
         </form> 
+      </div>
      </div>
     <div class="preview">
-      <!--<div class="resize-handle" onmousedown={handleMouseDown} onmouseup={handleMouseUp}></div>-->
       <iframe title = "pdf-window" id="fixedElement" src="{pdfData}" frameborder="0" width=100% height=100%></iframe>
-      <!--<button class = "send" value = "invia" type="submit">Invia</button>
-      <button class = "preview" value = "preview" type="submit">Preview</button>-->
     </div>    
     </div>
-    </main>
+    </body>
+    <style>
+      grey {
+          color: grey;
+          font-size: 20px;
+          margin-left: 2%;
+          font-weight: 300;
+      }
+      body {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        color: #333;
+        margin: 0;
+        padding: 8px;
+        box-sizing: border-box;
+        font-family: var(--font, "Segoe UI");
+      }
+      h1{
+        font-size: var(--fontsize,"2em");
+      }
+
+      a {
+        color: rgb(0,100,200);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      a:visited {
+        color: rgb(0,80,160);
+      }
+
+      label {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+          margin-top: auto;
+          margin-bottom: auto;
+          gap: 10px;
+      }
+
+      input, button, select, textarea {
+          font-family: inherit;
+          font-size: inherit;
+          -webkit-padding: 0.4em 0;
+          padding: 0.4em;
+          /* margin: 0 0 0.5em 0; */
+          box-sizing: border-box;
+          border: 1px solid #ccc;
+          border-radius: 2px;
+          margin-top: auto;
+          margin-bottom: auto;
+      }
+      h9 {
+          font-size: 2em;
+          font-weight: bold;
+          display: block;
+          margin-bottom: 10px;
+      }
+      input:disabled {
+        color: #ccc;
+      }
+      button#toggleButton {
+        margin-left: auto;
+        position: relative;
+        display: block;
+        margin-right: auto;
+        margin-bottom: 10px;
+      }
+      button {
+        color: var(--button-color,"#333");
+        background-color: var(--button-background,"#f4f4f4");
+        outline: none;
+      }
+
+      button:disabled {
+        color: #999;
+      }
+
+      button:not(:disabled):active {
+        background-color: #ddd;
+      }
+
+      button:focus {
+        border-color: #666;
+      }
+      .container {
+          display: grid;
+          /* flex-direction: column; */
+          /* position: fixed; */
+          grid-template-columns: 10% 62.5% 27.5%;
+          /* display: flex; */
+          height: 100%;
+          width : 100%;
+      }
+      .sinistra {
+          /*width: 20%;*/
+          /*min-width: 140px;*/
+          max-height: 76vh;
+      }
+
+      .cont_sinistra {
+          display: flex;
+          flex-direction: column;
+          /*width: 10%;*/
+          /* overflow-y: scroll; */
+          /* overflow-x: hidden; */
+          /* height: 600px; */
+          /* margin-bottom: 30px; */
+          /* overflow: visible; */
+          /*min-width: 110px;*/
+          justify-content: space-evenly;
+          /*min-height: 570px;*/
+          /*top: 10px;*/
+          /* height: 80%; */
+          padding-right : 5px;
+          /*bottom: 10px;*/
+          position: fixed;
+          border-right: 2px solid gainsboro;
+          /*left: 20px;*/
+      }
+      .responsive-heading {
+          /* Set the font size based on the viewport width */
+          font-size: calc(10px + 1.1vw);
+        }
+        .destra {
+          width: 96%;
+          /* min-width: 800px; */
+          margin-right: 2%;
+          margin-left: 2%;
+          position: relative;
+          /*margin-top: 200px;*/
+          z-index: 1;
+          min-height : 500px;
+          display: grid;
+          grid-template-rows: 12% 88%;        
+      }
+      .separator {
+          border-bottom: 5px solid #d9d9d9;
+          width: 100%;
+      }
+      .right1 {
+          display: flex;
+          flex-direction: column;
+      }
+      .elements-list {
+          overflow-y: auto;
+          max-height: 67vh;
+      }
+      .font {
+          /* padding: 5px; */
+          display: flex;
+          /* background-color: #7cafd1; */
+          /* flex-direction: column; */
+          gap: 10px;
+      }
+      .contenuto_field {
+        display: flex;
+        flex-direction: column;
+      }
+      form.elements {
+          display: flex;
+          flex-direction: column;
+        
+      }
+      .colonna-element {
+          background-color: beige;
+          width: 100%;
+          padding: 5px;
+          /* margin-right: 0px; */
+      }
+      .element {
+          display: flex;
+          gap: 10px;
+          /* margin-bottom: 10px; */
+          /* justify-content: space-between; */
+          /* padding: 5px; */
+          /* background-color: aliceblue; */
+          flex-direction: column;
+      }
+
+
+      .f\&f_size {
+        display: grid;
+        grid-template-columns: 50% 50%;
+      }
+      .style\&tipo {
+          display: grid;
+          /* gap: 100px; */
+          align-items: center;
+          grid-template-columns: auto 30%;
+      }
+      .tipo\&page {
+          display: grid;
+          grid-template-columns: 20% 70%;
+          gap: 10%;
+      }
+      .style\&fontsize {
+          display: flex;
+          justify-content: space-between;
+      }
+      .alignment {
+          display: grid;
+          grid-template-columns: 15% 12% 12% 12%;
+      }
+      .title\&id {
+          display: grid;
+          justify-content: space-between;
+          /* margin-right: 40%; */
+          grid-template-columns: 50% 45%;
+      }
+      .specifiche_toc {
+          /* display: grid; */
+          /* justify-content: space-between; */
+          /* grid-template-columns: 50% 50%; */
+          gap: 10px;
+          display: flex;
+          flex-direction: column;
+      }
+      .pbreak\&type {
+          display: grid;
+          grid-template-columns: 70% 20%;
+          justify-content: space-between;
+      }
+      .fontsize\&style {
+          display: grid;
+          /* gap: 20%; */
+          grid-template-columns: 40% 30% 30%;
+      }
+      select#select_indice {
+          min-width: 100px;
+          width: auto;
+      }
+      p {
+          display: flex;
+          justify-content: space-between;
+      }
+      .fontsize {
+          /* margin-top: 0px; */
+          /* margin-bottom: 0px; */
+          /* background-color: #b1d6dd; */
+          /* height: 100%; */
+          /* padding: 5px; */
+          display: flex;
+          /* flex-direction: column; */
+          gap: 10px;
+      }
+      .tipo {
+          margin-bottom: auto;
+          margin-top: auto;
+          display: flex;
+          justify-content: space-between;
+      }
+      .pbreak {
+        display: grid;
+        /* align-self: center; */
+        width: 100%;
+        grid-template-columns: 25% 25% 25% 25%;
+      }
+      button {
+        color: var(--button-color, #333);
+        background-color: var(--button-background, #f4f4f4);
+        outline: none;
+        margin: 4px;
+      }
+      .larghezza {
+          display: grid;
+          /* flex-direction: column; */
+          /* background: #acb9ff; */
+          /* padding: 5px; */
+          grid-template-columns: 30% 25% 35%;
+          justify-content: space-between;
+      }
+      .altezza {
+          display: grid;
+          grid-template-columns: 30% 35% 35%;
+      }
+      .colore_tabella {
+          align-self: center;
+      }
+      small-grey {
+          color: #a5a5a5;
+          font-weight: 400;
+      }
+      small-grey2 {
+          color: #a5a5a5;
+          font-weight: 400;
+          margin-left: 50px;
+      }
+      .addButton {
+          cursor: grab;
+      }
+      .tabella-element {
+          display: flex;
+          flex-direction: column;
+          /* background: #d4e7e1; */
+          /* padding: 5px; */
+          gap: 10px;
+      }
+      .attributi_colonne {
+          display: grid;
+          grid-template-columns: 40% 20% 30%;
+          justify-content: space-between;
+      }
+      .layout {
+          /* background: #dffbff; */
+          display: grid;
+          grid-template-columns: 20% 30% 40%;
+      }
+
+      label.label2 {
+          /* margin-right: 50%; */
+          /* margin-left: 0%; */
+          /* justify-content: space-between; */
+          display: flex;
+          gap: 10%;
+      }
+      .element-campi {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+      }
+      .element-riga {
+          /* background: #b8bcb9; */
+          /* padding: 5px; */
+          gap: 20px;
+          display: flex;
+          flex-direction: column;
+      }
+      .list-element {
+          /* background: #eff5df; */
+          /* padding: 5px; */
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+      }
+      .list_left1 {
+          border: 1px solid #cfcfcf;
+          width: 90%;
+          padding: 10px;
+          border-radius: 50px;
+          justify-self: center;
+          /* margin-right: 0px; */
+      }
+
+      .list-right1 {
+          /* justify-self: center; */
+          border: 1px solid #cfcfcf;
+          width: 90%;
+          padding: 10px;
+          border-radius: 50px;
+          justify-self: center;
+      }
+      .ordine {
+          /* margin: 5px; */
+          display: grid;
+          /* justify-content: center; */
+          /* gap: 50px; */
+          grid-template-columns: 50% 50%;
+          border-bottom: 1px solid #cfcfcf;
+          padding-bottom: 10px;
+      }
+
+      .stile_colore {
+          display: grid;
+          /* justify-content: space-between; */
+          grid-template-columns: 30% 60%;
+          gap: 10%;
+          align-items: center;
+      }
+      .colore {
+          display: grid;
+          /* flex-direction: column; */
+          /* background: #efe1ac; */
+          /* padding: 5px; */
+          grid-template-columns: 40% auto;
+      }
+      label.label3 {
+          display: flex;
+          /* justify-content: space-between; */
+          align-items: center;
+          /* margin-right: 20%; */
+          gap: 5%;
+      }
+      .stileNumeri {
+          /* margin: 5px; */
+          /* background: #f7d2b6; */
+          /* display: grid; */
+          /* grid-template-columns: 1fr 1fr; */
+          /* gap: 10px; */
+          /* padding: 5px; */
+          /* margin-top: 10px; */
+          display: grid;
+          grid-template-columns: 50% 50%;
+      }
+      .list_left {
+          display: grid;
+          /* grid-template-columns: 50% 50%; */
+          row-gap: 10px;
+          margin-bottom: 20px;
+          border-right: 1px solid #cfcfcf;
+          padding: 10px;
+      }
+      .list_right {
+          display: grid;
+          grid-template-columns: 50% 50%;
+          /* column-gap: 10px; */
+          row-gap: 10px;
+          margin-bottom: 20px;
+          padding: 10px;
+      }
+      .contenutolista {
+          /* margin-top: 10px; */
+          /* background: #e39576; */
+          display: grid;
+          justify-content: space-between;
+          grid-template-columns: 70% 30%;
+          border: 1px solid #cfcfcf;
+          padding: 15px;
+          border-radius: 10px;
+      }
+      label.label4 {
+          display: flex;
+          gap: 30px;
+      }
+      input[type="color"] {
+          padding: 0px;
+      }
+      .element-header {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          align-items: center;
+          flex-direction: column;
+      }
+
+      input[type="number"] {
+          width: 70px;
+      }
+
+      .style-margin {
+          gap: 10px;
+          width: 100%;
+          display: flex;
+          /* grid-template-columns: 25% 75%; */
+          flex-direction: column;
+      }
+      .margini {
+          /* display: grid; */
+          /* grid-template-rows: 50% 50%; */
+          /* grid-template-columns: 20% 20% 20% 20% 20%; */
+          /* gap: 1%; */
+          display: flex;
+          justify-content: space-between;
+      }
+      .cont-allignment {
+          /* display: flex; */
+          width: 100%;
+          align-items: center;
+          display: grid;
+          grid-template-columns: 45% 15% 13% 13% 13% 1%;
+      }
+      .colonne {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          margin-bottom: 30px;
+      }
+      .nome\&width {
+          display: grid;
+          grid-template-columns: 40% 25% 30%;
+          justify-content: space-between;
+      }
+      .span\&color {
+          display: grid;
+          grid-template-columns: 60% 40%;
+      }
+      label.label5 {
+          /* margin-right: 20%; */
+          display: grid;
+          /* justify-content: flex-start; */
+          grid-template-columns: 20% 4% 10% 4% 10% 4% 10% 4% 10%;
+      }
+      input.nomi_colonne {
+          width: 50%;
+      }
+      label.label6 {
+          display: grid;
+          grid-template-columns: auto auto;
+      }
+      label.label7 {
+          /*display: grid;*/
+          /*grid-template-columns: 30% 70%;*/
+      }
+      .cont_righe {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+      }
+      button.aggiungi-riga {
+          border-color: black;
+          background: #a9a9a975;
+          margin: 0px;
+      }
+      .rimuovi-riga {
+          margin: 10px;
+      }
+      .height\&remove {
+          display: flex;
+          /* grid-template-columns: 50% 50%; */
+          justify-content: space-between;
+      }
+      button.rimuovi_riga {
+          max-width: 150px;
+          border-color: black;
+          background: #a9a9a975;
+          /* display: flex; */
+          margin-left: 40%;
+      }
+      .svg-element {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+      }
+      .dimensioni_svg {
+          gap: 20px;
+          display: flex;
+          flex-direction: column;
+      }
+      .dimensioni {
+          display: grid;
+          justify-content: space-between;
+          margin-left: 10%;
+          grid-template-columns: 40% 40%;
+          /* gap: 10%; */
+      }
+      label7 {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+      .posizione {
+          display: grid;
+          grid-template-columns: 10% 10% 10% 10%;
+          gap: 40px;
+      }
+      .margini_pagina {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          /* gap: 20px; */
+          /* margin-right: 20%; */
+      }
+      .autosize-textarea {
+          resize: none;
+          overflow-y: hidden;
+          width: 100%;
+          height: 56px;
+          min-height: 56px;
+      }
+      .cella {
+          border: solid 2px #cdcdcd;
+          border-radius: 10px;
+          padding: 3%;
+          position: relative;
+          margin-top: 7px;
+          margin-bottom: 7px;
+          /*width: 94%;*/
+      }
+      .cella2 {
+          border: solid 2px #cdcdcd;
+          border-radius: 10px;
+          /* padding: 30px; */
+          padding-left: 30px;
+          padding-right: 30px;
+          position: relative;
+          margin-top: 7px;
+          margin-bottom: 7px;
+      }
+      .buttons_send_preview {
+          display: flex;
+          flex-direction: column;
+      }
+      .testo {
+          display: flex;
+          justify-content: space-between;
+      }
+      button.rimuovi {
+          /* margin-left: 90%; */
+          width: fit-content;
+          align-self: center;
+          height: 20%;
+          border-color: black;
+          background: #a1a1a175;
+      }
+
+      .custom-file-input::-webkit-file-upload-button {
+          visibility: hidden;
+        }
+        .custom-file-input::before {
+          content: 'Seleziona un file';
+          display: inline-block;
+          background: linear-gradient(top, #f9f9f9, #e3e3e3);
+          border: 1px solid #afafaf;
+          border-radius: 10px;
+          padding: 5px 8px;
+          outline: none;
+          white-space: nowrap;
+          -webkit-user-select: none;
+          cursor: pointer;
+          /* text-shadow: 1px 1px #fff; */
+          font-weight: 500;
+          /* font-size: 10pt; */
+      }
+      input.custom-file-input {
+          width: auto;
+      }
+      .custom-file-input:hover::before {
+          border-color: black;
+      }
+      .custom-file-input:active::before {
+          background: -webkit-linear-gradient(top, #e3e3e3, #f9f9f9);
+      }
+      .preview {
+          /* position: relative; */
+          /* width: 300px; */
+          /* right: 0px; */
+          /*width: 700px;*/
+          height: 100%;
+          max-height: 100%;
+      }
+      button.preview {
+          position: fixed;
+          bottom: 15px;
+          right: 300px;
+          width: 80px;
+          cursor: pointer;
+      } 
+      button.send {
+          bottom: 15px;
+          position: fixed;
+          right: 20px;
+          width: 80px;
+          cursor: pointer;
+      }
+      #fixedElement {
+          /*position: fixed;*/
+          /*width: auto;*/
+          /*right: 10px;*/
+          /*height: -webkit-fill-available;*/
+          /*min-width: 400px;*/
+          /*top: 10px;*/
+          /*bottom: 10px;*/
+      }
+      .resize-handle {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 10px;
+          height: 10px;
+          background-color: #000;
+          cursor: nwse-resize;
+          z-index: 999; /* Ensure the resize handle appears on top of the iframe */
+        }
+        .add-element {
+          width: 90%;
+          height: 70px;
+          border: #c2c2c2;
+          border-radius: 20px;
+          padding: 20px;
+          /* text-align: -webkit-center; */
+          border-style: dotted;
+          border-width: 4px;
+          /* margin: 10%; */
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+      .inner-dropzone {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgb(233 233 233 / 50%);
+          z-index: 2;
+        }
+        .list {
+          display: grid;
+          grid-template-columns: 33% 33% 33%;
+          row-gap: 5px;
+          column-gap: 0.5%;
+          max-height: 120px;
+          overflow-y: scroll;
+          border-bottom: 2px solid #d9d9d9;
+          border-top: 2px solid #d9d9d9;
+      }
+      single_file.fileButton {
+          border: 1px solid black;
+          padding: 2px;
+      }
+      .file_list {
+        top: 0px;
+        display: none;
+        z-index: 3;
+        background-color: white;
+        padding-bottom: 5px;
+        margin-bottom: 5px;
+        border-bottom: 5px solid #e0e0e0;
+      }
+      .dropzone_Text {
+          width: 100%;
+          height: auto;
+          /* right: 0px; */
+          /* left: 20px; */
+      }
+      .dropnew {
+          position: relative;
+          width: 50%;
+          height: 56px;
+      }
+      .drop2 {
+          width: 100%;
+          /* max-width: 100%; */
+          position: relative;
+      }
+      .preview_height {
+          display: flex;
+          gap: 5%;
+      }
+      @media screen and (max-width: 1050px) {
+          #fixedElement {
+              display: none;
+          }
+          .preview {
+              width: 0%;
+          }
+          .destra {
+          
+          }
+
+      }
+      @media screen and (max-width: 1323px) {
+          #fixedElement {
+              display: none;
+          }
+          .preview {
+              width: 0%;
+          }
+          .destra {
+              width: 90%;
+              /* margin-right: 50px; */
+              /* margin-left: 200px; */
+              min-width: 700px;
+              /* margin-right: 350px; */
+              margin-left: 20px;
+              position: relative;
+          }
+          .file_list{
+              right: 5px;
+              left : 13%;
+          }
+      
+
+      }
+      @media screen and (max-width: 1200px) {
+          .file_list{
+              left : 150px;
+          }
+      }
+      .dropzone {
+          position: absolute;
+          background-color: rgba(0, 0, 0, 0.1); /* Set the desired background color */
+          opacity: 0; /* Make it invisible */
+          z-index: 1;
+      }
+      .svgArea {
+          pointer-events: none;
+      }
+      .dropzone {
+          pointer-events: none;
+        }
+        
+      .disable-clicks * {
+          pointer-events: none;
+      }
+
+      .upper-dropzone {
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 50%;
+      }
+
+      .lower-dropzone {
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 50%;
+      }
+      .second {
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+      }
+      .third {
+          /* height: 100%; */
+          bottom: auto;
+          left: auto;
+      }
+      input.table_cell {
+          width: 150px;
+      }
+      .attributes_container {
+          display: flex;
+          gap: 0px;
+          width: 96%;
+          overflow-x: auto;
+          border: 3px solid #d8d8d8;
+          padding: 2%;
+          border-radius: 10px;
+      }
+      .content_container {
+          display: flex;
+          gap: 0px;
+          width: 96%;
+          overflow-x: auto;
+          border: 3px solid #d8d8d8;
+          padding: 2%;
+          border-radius: 10px;
+      }
+      .attributes\&addcolonna {
+          display: grid;
+          grid-template-columns: 70% 30%;
+      }
+      .content\&addriga {
+          grid-template-columns: 80% 20%;
+          display: grid;
+      }
+      .settings {
+          border: 1px #b8b8b8 solid;
+          padding: 20px;
+          border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+      }
+      @media screen and (max-width: 1440px) {
+          .container {
+              display: grid;
+              /* flex-direction: column; */
+              /* position: fixed; */
+              grid-template-columns: 12% 56.5% 31.5%;
+              /* display: flex; */
+          }
+      }
+      @media screen and (max-width: 1323px) {
+          .container {
+              display: grid;
+              /* flex-direction: column; */
+              /* position: fixed; */
+              grid-template-columns: 20% 80%;
+              /* display: flex; */
+          }
+
+      }
+      @media screen and (max-width: 1050px) {
+          .container {
+              display: grid;
+              /* flex-direction: column; */
+              /* position: fixed; */
+              grid-template-columns: 16% 84%;
+              /* display: flex; */
+          }
+
+      }
+      @media screen and (max-width: 763px) {
+          .container {
+              display: grid;
+              /* flex-direction: column; */
+              /* position: fixed; */
+              grid-template-columns: 25% 75%;
+              /* display: flex; */
+          }
+
+      }
+      .add\&remove {
+          width: 99%;
+          margin-left: 1%;
+      }
+      button.aggiungi-colonna {
+          width: 90%;
+          height: 40px;
+          margin-left: 10px;
+          margin-right: 10px;
+          margin-top: 2px;
+          margin-bottom: 2px;
+      }
+    </style>

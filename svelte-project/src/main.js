@@ -1,4 +1,4 @@
-import App from './PDFmakerApp.svelte';
+import App from './MainPDFMake.svelte';
 
 const app = new App({
   target: document.body

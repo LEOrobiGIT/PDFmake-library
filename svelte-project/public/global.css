@@ -160,6 +160,8 @@ form.elements {
     /* gap: 100px; */
     grid-template-columns: 30% 15% auto;
     align-items: center;
+    margin-top: 80px;
+    grid-template-columns: auto auto auto;
 }
 .tipo\&page {
     display: grid;
@@ -222,6 +224,7 @@ p {
     margin-top: auto;
     display: flex;
     justify-content: space-between;
+    margin-right: 20px;
 }
 .pbreak {
     display: grid;
@@ -701,9 +704,12 @@ single_file.fileButton {
     border-bottom: 5px solid #e0e0e0;
 }
 .dropzone_Text {
-    width: 800px;
+    width: 700px;
     position: absolute;
     height: 80px;
+    /* right: 0px; */
+    /* left: 20px; */
+    /* width: 10%; */
 }
 .dropnew {
     position: relative;
@@ -823,7 +829,7 @@ input.table_cell {
 }
 .attributes\&addcolonna {
     display: grid;
-    grid-template-columns: 80% 20%;
+    grid-template-columns: 70% 30%;
 }
 .content\&addriga {
     grid-template-columns: 80% 20%;

@@ -14,3 +14,5 @@ Per richiamare l'app svelte :
     });
 
 Da sostituire fileList con fileListpassed 
+Per far funzionare il pacchetto scambia vfs_fonts con vfs_fonts2 e cambia in package.json main module e svelte (anche rollup config input probabilmente)
+aggiorna dictionary con i nuovi valori 
