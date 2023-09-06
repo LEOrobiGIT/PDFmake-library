@@ -9,6 +9,11 @@
     });
 
     let dictionary = {
+        page_counter_info: "Sovrascrive il contenuto del footer",
+        page_counter : "Numero della pagina",
+        default_font : "Scegli un font come default per il template",
+        label_margins : "Margini della pagina",
+        label_dimensions: "dimensioni totali 595 x 942 pixels",
         label_header : "Header",
         label_footer : "Footer",
         label_index : "Indice",
@@ -58,6 +63,7 @@
         height : "Altezza",
         max_height : "Altezza Massima",
         auto_height : "Altezza Auto",
+        height_table: "Prima riga",
         dimensions : "Dimensioni",
         max_dimensions : "Dimensioni Massime",
         abs_dimensions : "Dimensioni Assolute",
@@ -71,9 +77,11 @@
         add_row: "Aggiungi Riga",
         layout : "Layout",
         custom : "Custom",
+        border : "Con bordi",
         no_border : "Nessun bordo",
         horizontal_lines : "Solo righe orizzontali",
-        table_color: "Colore della tabella",
+        table_ch_color: "Colore dei caratteri della tabella",
+        table_bg_color: "Colore dello sfondo della tabella",
         attributes : "Riga di Intestazione",
         details : "Dettagli",
         cells : "Celle del campo",
@@ -104,6 +112,57 @@
         "--font": "Segoe UI",
         "--fontsize" : "2em"
     }
+    let parentContent = [];
+    function handleDataFromChild(event) {
+        parentContent = event.detail;
+        console.log("parentContent = ", parentContent);
+    }
+    function loadFile() {
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = ".json";
+
+        fileInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        parentContent = JSON.parse(e.target.result);
+                        console.log("Loaded content:", parentContent);
+                    } catch (error) {
+                        console.error("Error loading file:", error);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Trigger the file input click event
+        fileInput.click();
+    }
+
+    function saveData() {
+    if (Array.isArray(parentContent) && parentContent.length === 0) {
+        // If parentContent is an empty array, disable the save button
+        return;
+    }
+
+    const jsonContent = JSON.stringify(parentContent, null, 2);
+    const blob = new Blob([jsonContent], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data.json";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+}
+    
 </script>
 <div class = "containernew">
     <div class = "header">
@@ -112,9 +171,13 @@
     <div class = "body">
         <div class = "left"> 
             Contenuto colonna di sinistra
+            <div class="buttons">
+                <button on:click={loadFile}>Load</button>
+                <button on:click={saveData}>Save</button>
+            </div>
         </div>
         <div class = "right">
-            <PDFmakerApp fileListpassed={fileList} css_root = {css_root} dictionary = {dictionary} bind:dd={dd} />  
+            <PDFmakerApp fileListpassed={fileList} css_root = {css_root} dictionary = {dictionary} bind:dd={dd} on:dataToParent={handleDataFromChild} contenuto = {parentContent} />  
         </div>
     </div>
 </div>

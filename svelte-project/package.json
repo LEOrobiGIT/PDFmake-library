@@ -10,9 +10,12 @@
     "generate-file-list": "node generateFileList.js",
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "sirv public --no-clear"
+    "start": "sirv public --no-clear",
+    "test-ct": "playwright test -c playwright-ct.config.js",
+    "test": "playwright test"
   },
   "devDependencies": {
+    "@playwright/experimental-ct-svelte": "^1.37.1",
     "@playwright/test": "^1.36.2",
     "@rollup/plugin-commonjs": "^24.0.0",
     "@rollup/plugin-json": "^6.0.0",

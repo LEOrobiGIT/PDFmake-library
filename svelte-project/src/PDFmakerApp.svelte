@@ -8,6 +8,9 @@
   import PDFPreview from './PDFPreview.svelte';
   import { ddStore } from './PDFstore.js';
   let generatedPdfData;
+  import { createEventDispatcher } from "svelte";
+  const dispatch = createEventDispatcher();
+  export let contenuto;
   export let fileListpassed = [];
   export let debug = false;
   export let dictionary = {
@@ -148,6 +151,7 @@
     pdfMake.createPdf(dd).getDataUrl((dataUrl) => {
       pdfData = dataUrl;
     });
+    let default_font = "";
   //------------------Content structure ----------------------------
     let fieldbase = {type: 'field',elemento:{id:0, content: '', selectedfont:'', selectedfontsize: '', selectedstyle: '', selectedbold : '', selecteditalics :'', pagebreak: ''}};
     let columnbase ={type :"column",elemento:{id: 1, gap: 10, fields: [], alignment: "" }};
@@ -161,7 +165,13 @@
     let img = {type: 'img',elemento: {id :9 , selectedFile: null,imgContent : '',larghezza : 0, altezza: 0 ,larghezza_fit: 0, altezza_fit: 0, alignment : "", imgMargins : []}};
     let toc = {type : 'toc', elemento: { id: 10, id_sec : "", style : "", fontSize: 15, text :"", pageBreak: '',bold: "", italics : "" }}
     let pagina = {type : 'page', id : 1, pageMargins : [40,40,40,40]};
-    let contenuto =[pagina];
+    if (contenuto && contenuto.length > 0){
+      console.log("ok");
+    } else {
+      console.log("contenuto = ",contenuto);
+      contenuto = [pagina];
+    }
+    //let contenuto =[pagina];
     let style = {nome : '', font : '', fontsize: '', bold : '', italics : '',alignment: '', lineheight : 1, color :'', background : ''};
     let nextId = 2; // id for the next field/column to be added
   //------------ Style declaration--------------------------
@@ -169,7 +179,7 @@
       header : {fontSize : 18,bold : true}, 
       subheader : {fontSize : 15, bold: true}, 
       quote: {italics : true}, 
-      small : {fontSize : 8}, 
+      small : {fontSize : 6}, 
       normal : {fontSize :12}
     }
     var hasHeader = false;
@@ -181,6 +191,9 @@
       checkFooterAndExecute;
       checkHeaderAndExecute;
       console.log(contenuto);
+      if (default_font === ""){
+        default_font = "Roboto";
+      };
       var dd = {};
       var dd_preview = {};
       var pageMargins = contenuto[0].pageMargins;
@@ -222,6 +235,9 @@
           });
         } else if (item.type === 'row') {
           dd.content.push({
+            text : "  ",
+          });
+          dd_preview.content.push({
             text : "  ",
           });
         } else if (item.type === 'column') {
@@ -354,7 +370,8 @@
           const body_table =[];
           const body_table_preview = [];
           const layout = item.elemento.layout || '';
-          const color = item.elemento.color || '#444'
+          const color = item.elemento.color || '#444';
+          var bgcolor = item.elemento.bgcolor || '#ffffff';
           const contenuto_t = item.elemento.contenuto_t || '';
           const font = item.elemento.font || 'Roboto';
           const fontsize = item.elemento.fontsize || 12;
@@ -378,13 +395,13 @@
               for (let i = 0; i < el.numero; i++){
                 var testo = el.testo[i] || "";
                 const test_text = el.test_text[i] || "4";
+                var fill_color = el.fillcolor[i];
                 var text_generated = generateText(test_text.toString()); 
                 console.log(el.larghezza_colonne[i]);
                 if (!el.larghezza_colonne[i]){
                   el.larghezza_colonne[i] = "auto"
                 };
                 larghezza.push(el.larghezza_colonne[i]);
-                var fill_color = el.fillcolor[i];
                 var borders = [];
                 borders.push(el.borders.left[i]);
                 borders.push(el.borders.top[i]);
@@ -392,17 +409,22 @@
                 borders.push(el.borders.bottom[i]);
                 var alignment = el.alignments[i];
                 var colspan = el.colspan[i] || 1;
-                
+                var bgcolor1;
+                if (fill_color != ""){
+                  bgcolor1 = fill_color;
+                } else {
+                  bgcolor1 = bgcolor;
+                };
                 riga.push({
                   border : borders,
-                  fillColor: fill_color,
+                  fillColor: bgcolor1,
                   alignment : alignment,
                   colSpan: colspan,
                   text : testo,
                 });
                 riga_preview.push({
                   border : borders,
-                  fillColor: fill_color,
+                  fillColor: bgcolor1,
                   alignment : alignment,
                   colSpan: colspan,
                   text : text_generated,
@@ -418,8 +440,8 @@
                 var testo = el.testo[i]|| "";
                 const test_text = el.test_text[i] || "8";
                 var text_generated = generateText(test_text.toString());
-                console.log(text_generated);
                 var fill_color = el.fillcolor[i];
+                console.log(text_generated);
                 var borders = [];
                 borders.push(el.borders.left[i]);
                 borders.push(el.borders.top[i]);
@@ -427,16 +449,22 @@
                 borders.push(el.borders.bottom[i]);
                 var alignment = el.alignments[i];
                 var colspan = el.colspan[i]|| 1;
+                var bgcolor2;
+                if (fill_color != ""){
+                  bgcolor2 = fill_color;
+                } else {
+                  bgcolor2 = bgcolor;
+                };
                 riga.push({
                   border : borders,
-                  fillColor: fill_color,
+                  fillColor: bgcolor2,
                   alignment : alignment,
                   colSpan: colspan,
                   text : testo,
                 });
                 riga_preview.push({
                   border : borders,
-                  fillColor: fill_color,
+                  fillColor: bgcolor2,
                   alignment : alignment,
                   colSpan: colspan,
                   text : text_generated,
@@ -484,11 +512,13 @@
           const color = item.elemento.color;
           const markercolor = item.elemento.markerColor;
           const pointer = item.elemento.pointer;
+          const font = item.elemento.font ||"Roboto";
+          const fontsize = item.elemento.fontsize || 12;
           const lista = [];
           const lista_preview = [];
           item.elemento.testo.forEach(el=>{
             lista.push(el.content);
-            const test_text = el.test_text || "4";
+            const test_text = el.test_text || "10";
             var text_generated = generateText(test_text.toString()); 
             lista_preview.push(text_generated);
           });
@@ -497,6 +527,8 @@
               style: style,
               color : color,
               markerColor : markercolor,
+              font : font,
+              fontSize : fontsize,
               type : pointer,
               ul:lista
             });
@@ -504,6 +536,8 @@
               style: style,
               color : color,
               markerColor : markercolor,
+              font : font,
+              fontSize : fontsize,
               type : pointer,
               ul:lista_preview
             })
@@ -513,6 +547,8 @@
               style: style,
               color : color,
               markerColor : markercolor,
+              font : font,
+              fontSize : fontsize,
               type : pointer,
               ol:lista
             });
@@ -521,6 +557,8 @@
               style: style,
               color : color,
               markerColor : markercolor,
+              font : font,
+              fontSize : fontsize,
               type : pointer,
               ol:lista_preview
             })
@@ -552,7 +590,7 @@
           dd_preview.header.style = style;
           dd_preview.header.margin = margin_preview;
           if (font === ""){
-            font = "Roboto";
+            font = default_font;
           }
           if (fontsize === ""){
             fontsize = 12;
@@ -562,6 +600,7 @@
           dd_preview.header.font = font;
           dd_preview.header.fontSize = fontsize;
         } else if (item.type === 'footer'){
+          const page_counter = item.elemento.page_counter;
           const testo = item.elemento.testo;
           const test_text = item.elemento.test_text || "4";
           var text_generated = generateText(test_text.toString()); 
@@ -571,6 +610,12 @@
           const margin_preview = [];
           var font = item.elemento.font;
           var fontsize = item.elemento.fontsize;
+          if (font === ""){
+              font = "Roboto";
+            }
+          if (fontsize === ""){
+            fontsize = 12;
+          }
           margin.push(item.elemento.margin.left);
           margin.push(item.elemento.margin.top);
           margin.push(item.elemento.margin.right);
@@ -579,24 +624,41 @@
           margin_preview.push(item.elemento.margin.top);
           margin_preview.push(item.elemento.margin.right);
           margin_preview.push(item.elemento.margin.bottom);
-          dd.footer.text = testo;
-          dd.footer.alignment = alignment;
-          dd.footer.style = style;
-          dd.footer.margin = margin;
-          dd_preview.footer.text = text_generated;
-          dd_preview.footer.alignment = alignment;
-          dd_preview.footer.style = style;
-          dd_preview.footer.margin = margin_preview;
-          if (font === ""){
-            font = "Roboto";
+          if (page_counter === true){
+            dd.footer = function(currentPage, pageCount) { 
+              return {
+                text: currentPage.toString() + ' of ' + pageCount,
+                alignment: alignment,
+                style : style,
+                margin : margin,
+                font : font,
+                fontsize : fontsize,
+                }; 
+            };
+            dd_preview.footer = function(currentPage, pageCount) { 
+              return {
+                text: currentPage.toString() + ' of ' + pageCount,
+                alignment: alignment,
+                style : style,
+                margin : margin,
+                font : font,
+                fontsize : fontsize,
+                }; 
+            };
+          } else {
+            dd.footer.text = testo;
+            dd.footer.alignment = alignment;
+            dd.footer.style = style;
+            dd.footer.margin = margin;
+            dd_preview.footer.text = text_generated;
+            dd_preview.footer.alignment = alignment;
+            dd_preview.footer.style = style;
+            dd_preview.footer.margin = margin_preview;
+            dd.footer.font = font;
+            dd.footer.fontSize = fontsize;
+            dd_preview.footer.font = font;
+            dd_preview.footer.fontSize = fontsize;
           }
-          if (fontsize === ""){
-            fontsize = 12;
-          }
-          dd.footer.font = font;
-          dd.footer.fontSize = fontsize;
-          dd_preview.footer.font = font;
-          dd_preview.footer.fontSize = fontsize;
         } else if (item.type === 'svg'){
           const svgContent = item.elemento.svgContent;
           const test_svg = item.elemento.test_svg;
@@ -746,6 +808,7 @@
         /*onDestroy(() => {
           unsubscribe();
         });*/
+        dispatch("dataToParent", contenuto);
         contenuto =[...contenuto];
       }
       }
@@ -756,8 +819,8 @@
       const field = {
         id: nextId,
         content: '',
-        test_text: '',
-        selectedfont: '',
+        test_text: '40',
+        selectedfont: default_font,
         selectedfontsize: '',
         selectedstyle: '',
         selectedbold: '',
@@ -791,8 +854,8 @@
         type : "field",
         id: nextId,
         content: '',
-        test_text: '',
-        selectedfont: '',
+        test_text: '20',
+        selectedfont: default_font,
         selectedfontsize: '',
         selectedstyle: '',
         selectedbold: '',
@@ -811,6 +874,7 @@
       nextId++;
     }
     function addIMGtoColumn(index) {
+      console.log(contenuto);
       var filePath = 'default/black.jpg';
       const reader = new FileReader();
       
@@ -828,7 +892,7 @@
           larghezza_fit: 100,
           altezza_fit: 200,
           alignment :"",
-          imgMargins : [0,10,0,0],
+          imgMargins : [0,0,0,0],
           isMaxDimensionsSelected : "true",
         };
         for (var i = 0; i < contenuto.length; i++) {
@@ -864,7 +928,7 @@
           larghezza_fit: 100,
           altezza_fit: 200,
           alignment :"",
-          imgMargins : [0,10,0,0],
+          imgMargins : [0,0,0,0],
           isMaxDimensionsSelected : "true",
         };
         for (var i = 0; i < contenuto.length; i++) {
@@ -906,12 +970,13 @@
         const table = {
           id: nextId,
           layout: 'Custom', 
-          font: "",
+          font: default_font,
           fontsize: "12",
           pagebreak :"",
           bold : "",
           italics: "",
           color:'', 
+          bgcolor : '',
           righe: 1,
           contenuto_t:[{type : "campo",id : nextId+1,testo:[""],test_text: [''], settings : [-1,-1,""],larghezza_colonne :["auto"],fillcolor : [""], numero: 1, tipoaltezza_riga : "auto", altezza_riga : 10, borders:{left:[true],top:[true],right:[true],bottom:[true]}, alignments: [""], colspan : [1]},{type : "contenuto_campi",id : nextId+2,id_riga : 1, testo:[""], test_text: [''],tipoaltezza_riga : "auto", altezza_riga : 10, fillcolor : [""], borders:{left:[true],top:[true],right:[true],bottom:[true]}, alignments : [""], colspan : [1]}] 
         };
@@ -981,6 +1046,7 @@
             var num_righe = tabella.elemento.righe
             var border = tabella.elemento.layout;
             colonne = tabella.elemento.contenuto_t[0].numero;
+            var bgcolor = tabella.elemento.bgcolor;
           }
       };
       var borders = {left:[],top:[],right:[],bottom:[]};
@@ -1006,6 +1072,10 @@
           borders.bottom.push(false);
         }
       };
+      var fillcolor = [];
+      for (let i = 0; i < colonne; i++) {
+          fillcolor.push(bgcolor);
+        };
       contenuto_campi = {
           type:"contenuto_campi",
           id: nextId,
@@ -1014,7 +1084,7 @@
           test_text: [''],
           tipoaltezza_riga : "auto",
           altezza_riga:10,
-          fillcolor : [""],
+          fillcolor : fillcolor,
           borders:borders, 
           alignments : [""], 
           colspan : [1]
@@ -1038,6 +1108,7 @@
           if (selected.type === "table" && selected.elemento.id === tableId){
             var larghezza_colonne = selected.elemento.contenuto_t[0].larghezza_colonne[0];
             var borders = {};
+            var bgcolor = selected.elemento.bgcolor;
             borders.left = selected.elemento.contenuto_t[0].borders.left[0];
             borders.top = selected.elemento.contenuto_t[0].borders.top[0];
             borders.right = selected.elemento.contenuto_t[0].borders.right[0];
@@ -1048,12 +1119,13 @@
             selected.elemento.contenuto_t[0].borders.right.push(borders.right);
             selected.elemento.contenuto_t[0].borders.bottom.push(borders.bottom);
             selected.elemento.contenuto_t[0].colspan.push(1);
+            selected.elemento.contenuto_t[0].fillcolor.push(bgcolor);
             selected.elemento.contenuto_t[0].numero += 1;
             var cont_t = selected.elemento.contenuto_t;
             for (var x = 1; x < cont_t.length; x++){
               cont_t[x].testo.push('');
               cont_t[x].colspan.push(1);
-              cont_t[x].fillcolor.push('');
+              cont_t[x].fillcolor.push(bgcolor);
               cont_t[x].alignments.push('');
               cont_t[x].borders.left.push(cont_t[x].borders.left[0]);
               cont_t[x].borders.top.push(cont_t[x].borders.top[0]);
@@ -1112,9 +1184,11 @@
     function addList(i) {
           const list = {
             id: nextId,
-            tipo: '',
+            tipo: 'ul',
             start : 1,
             style:'', 
+            font : default_font,
+            fontsize : '',
             color: "", 
             markerColor: "", 
             pointer : "",
@@ -1135,7 +1209,7 @@
         const field = {
           id: nextId,
           content: '',
-          test_text: '',
+          test_text: '10'
         };
         for (var i = 0; i < contenuto.length; i++) {
           var lista = contenuto[i];
@@ -1171,10 +1245,10 @@
       const header = {
         id: nextId,
         testo: '',
-        test_text: '',
+        test_text: '10',
         alignment : '',
         style : '',
-        font: '',
+        font: default_font,
         fontsize: '',
         margin :{left: 20, top: 20,  right: 20, bottom: 0}
       };
@@ -1215,11 +1289,12 @@
           const footer = {
             id: nextId,
             testo: '',
-            test_text: '',
+            test_text: '10',
             alignment : '',
             style : '',
-            font: '',
+            font: default_font,
             fontsize: '',
+            page_counter : false,
             margin :{left: 20, top: 0,  right: 20, bottom: 20}
           };
           const item = { type: 'footer', elemento: footer};
@@ -1408,7 +1483,7 @@
                 ...selected,
                 elemento: {
                   ...selected.elemento,
-                  selectedfontsize: fontsize,
+                  fontsize: fontsize,
                 },
               };
             }else if (selected.type === "footer"){
@@ -1416,14 +1491,14 @@
                 ...selected,
                 elemento: {
                   ...selected.elemento,
-                  fontSize: fontsize,
+                  fontsize: fontsize,
                 },
               };
             }
           }
           return selected;
         });
-        
+        contenuto = [...contenuto];
         console.log(contenuto);
         
       }
@@ -1678,17 +1753,21 @@
     }
 
     function disableRadioButtons(event,id) {
+      const selectorleft = `.style_index_list${id}`;
+      const selectorright = `.style_pointer_list${id}`;
       const selectedValue = event.target.value;
-      const listLeftInputs = document.querySelectorAll(`[class^="list_left"][class$="${id}"] input`);
-      const listRightInputs = document.querySelectorAll(`[class^="list_right"][class$="${id}"] input`);
+      const listLeftInputs = document.querySelectorAll(selectorleft);
+      const listRightInputs = document.querySelectorAll(selectorright);
+      console.log(listLeftInputs);
+      console.log(listRightInputs);
       for (var i = 0; i < contenuto.length; i++) {
           var selected = contenuto[i];
           if (selected.type === "list" && selected.elemento.id === id){
-            console.log(selected.elemento.pointer);
             selected.elemento.pointer = "";
           }else{continue}
         };
       if (selectedValue === 'ol') {
+        console.log("ol");
         listRightInputs.forEach(input => {
           input.disabled = true;
           input.checked = false;
@@ -1697,6 +1776,7 @@
           input.disabled = false;
         });
       } else if (selectedValue === 'ul') {
+        console.log("ul");
         listLeftInputs.forEach(input => {
           input.disabled = true;
           input.checked = false;
@@ -1884,9 +1964,9 @@
           id_sec : "",
           style : "",
           fontSize: "15",
-          font:"",
+          font: default_font,
           text :"",
-          test_text: '',
+          test_text: '15',
           pageBreak: '',
           bold : "",
           italics: ""
@@ -2109,14 +2189,16 @@
     }
     function handleDropFile(event,id,id_sec,pos) {
       event.preventDefault();
+      console.log("id = "+id);
+      console.log("id_sec = "+id_sec);
+      console.log(contenuto);
       for (var i = 0; i < contenuto.length; i++) {
         var item = contenuto[i];
-        console.log("id = "+id);
-        console.log("id_sec = "+id_sec);
         if (item.type != "page" && item.elemento.id === id){
+          console.log(item);
           if(item.type === "field"){
             item.elemento.content = selectedFileContent;
-          }if(item.type === "column"){
+          }else if(item.type === "column"){
             console.log(item.elemento);
             for (var x = 0; x < item.elemento.fields.length; x++){
               var field = item.elemento.fields[x];
@@ -2125,24 +2207,30 @@
                 field.content = selectedFileContent;
               }
             }
-          }if(item.type === "toc"){
+          }else if(item.type === "toc"){
             item.elemento.text = selectedFileContent;
-          }if(item.type === "toc"){
+          }else if(item.type === "toc"){
             item.elemento.text = selectedFileContent;
-          }if(item.type === "table"){
+          }else if(item.type === "table"){
             for (var x = 0; x < item.elemento.contenuto_t.length; x++){
               var el = item.elemento.contenuto_t[x];
               if (el.id === id_sec){
                 el.testo[pos] = selectedFileContent;
               }
             };
-          }if (item.type === "list"){
-            for (var x = 0; x < item.elemento.testo.length; x++){
-              var el = item.elemento.testo[x];
-              if (el.id === id_sec){
-                el.content = selectedFileContent;
+          }else if (item.type === "list"){
+            console.log(item.elemento.testo.length);
+              for (var x = 0; x < item.elemento.testo.length; x++){
+                var el = item.elemento.testo[x];
+                console.log("el = ",el);
+                if (el.id === id_sec){
+                  el.content = selectedFileContent;
+                }
               }
-            }
+          }else if (item.type === "img"){
+            item.elemento.imgContent = selectedFileContent;
+          }else if (item.type === "svg"){
+            item.elemento.svgContent = selectedFileContent;
           }else{
             item.elemento.testo = selectedFileContent;
           }
@@ -2172,7 +2260,7 @@
     }
     function handleDropSVG_IMG_COLUMN(event,column_id,field_id){
       event.preventDefault();
-      console.log(selectedFileContent);
+      console.log("----------------", selectedFileContent);
       for (var i = 0; i < contenuto.length; i++) {
         var item = contenuto[i];
         if (item.type != "page" && item.elemento.id === column_id){
@@ -2262,6 +2350,9 @@
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
     }
+    function handleDragOvernew(event) {
+      event.preventDefault();
+    }
 
     function handleDragLeave(event) {
       event.preventDefault();
@@ -2338,25 +2429,25 @@
     }
 
   //----------------Toggle---------------------------------
-  function toggle(){
-    const toggleButton = document.getElementById('toggleButton');
-    const container = document.getElementById('file_list');
-    const destra = document.getElementById('destra');
-    const elements = document.getElementById("elements");
-    if (container.style.display === 'none') {
-      container.style.display = 'block';
-      toggleButton.style.backgroundColor =  "#8e8e8e";
-      toggleButton.style.color = "white";
-      destra.style["grid-template-rows"] = "46% 54%";
-      elements.style["max-height"] = "41vh";
-    } else {
-      container.style.display = 'none';
-      toggleButton.style.backgroundColor =  "var(--button-background, #f4f4f4)";
-      toggleButton.style.color = "var(--button-color, #333)";
-      destra.style["grid-template-rows"] = "12% 88%";
-      elements.style["max-height"] = "67vh";
-    };
-  }
+    function toggle(){
+      const toggleButton = document.getElementById('toggleButton');
+      const container = document.getElementById('file_list');
+      const destra = document.getElementById('destra');
+      const elements = document.getElementById("elements");
+      if (container.style.display === 'none') {
+        container.style.display = 'block';
+        toggleButton.style.backgroundColor =  "#8e8e8e";
+        toggleButton.style.color = "white";
+        destra.style["grid-template-rows"] = "46% 54%";
+        elements.style["max-height"] = "41vh";
+      } else {
+        container.style.display = 'none';
+        toggleButton.style.backgroundColor =  "var(--button-background, #f4f4f4)";
+        toggleButton.style.color = "var(--button-color, #333)";
+        destra.style["grid-template-rows"] = "12% 88%";
+        elements.style["max-height"] = "67vh";
+      };
+    }
 
 </script>
     <body>
@@ -2389,7 +2480,7 @@
           <div class ="file_list" id = "file_list" style = "display: none">
             <h9>{dictionary.list_file}:</h9>
               {#if fileListpassed.length > 0}
-                <div class ="list"> 
+                <div class ="list" > 
                 {#each fileListpassed as file}
                 <single_file
                     type="button"
@@ -2416,24 +2507,35 @@
         <h1>{dictionary.create_PDF}</h1>
         <form class="elements" on:submit|preventDefault={handleSubmit}>
           <div class = "cella">
-            <h1>Margini della pagina  <grey> ( dimensioni totali 595 x 942 pixels ).</grey></h1>
+            <h1>{dictionary.label_margins} <grey> ( {dictionary.label_dimensions} ).</grey></h1>
             <div class = "margini_pagina">
               <label>
-                Sinistra:
+                {dictionary.left}:
                 <input type="number" class = "margini" bind:value={contenuto[0].pageMargins[0]} min="20" max = "290">
               </label>
               <label>
-                Superiore:
+                {dictionary.top}:
                 <input type="number" name = "top" class = "margini" bind:value={contenuto[0].pageMargins[1]} min="40" max = "420" on:change={HandleChangeMarginsPage}>
               </label>  
               <label>
-                Destra:
+                {dictionary.right}:
                 <input type="number" class = "margini" bind:value={contenuto[0].pageMargins[2]} min="20" max = "290">
               </label>  
               <label>
-                Inferiore:
+                {dictionary.bottom}:
                 <input type="number" name = "bottom" class = "margini" bind:value={contenuto[0].pageMargins[3]} min="40" max = "420" on:change={HandleChangeMarginsPage}> <small-grey>(pixels)</small-grey>
               </label>
+            </div>
+            <div class = "deafult_font">
+              {dictionary.default_font}:
+              <select id="default_font" bind:value={default_font}>
+                <option value="">{dictionary.select}</option>
+                <option value="Roboto">Roboto</option>
+                <option value="RobotoSerif">RobotoSerif</option>
+                <option value="Raleway">Raleway</option>
+                <option value="NotoSerif">NotoSerif</option>
+                <option value="Montserrat">Montserrat</option>
+              </select>
             </div>
             <div class="dropzone lower-dropzone second" on:dragenter={(e) => handleDragEnter(e, 1)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, 1)} on:dragover={handleDragOver} id="drop_zone"></div>
           </div>
@@ -2471,7 +2573,7 @@
                         <label> 
                           <p>{dictionary.style}:</p>
                           <!-- svelte-ignore a11y-mouse-events-have-key-events -->
-                          <select id="style-select" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFillHeader(e, item.elemento.id)}>  
+                          <select id="style-select_header" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFillHeader(e, item.elemento.id)}>  
                             <option value="normal"> Default </option>
                             <option value="header" > Header</option>
                             <option value="subheader">SubHeader</option>
@@ -2481,8 +2583,8 @@
                         </label>
                       </div>
                       <div class ="font">
-                        <label for="font">Font:</label>
-                        <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
+                        <label for="font_header">Font:</label>
+                        <select id="font_header" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
                             <option value="">{dictionary.select}</option>
                             <option value="Roboto">Roboto</option>
                             <option value="RobotoSerif">RobotoSerif</option>
@@ -2492,7 +2594,7 @@
                         </select>
                       </div>
                       <div class ="fontsize">
-                        <label for="fontsizes"><p>{dictionary.fontsize}:</p></label>
+                        <label for="fontsizes-header"><p>{dictionary.fontsize}:</p></label>
                         <select id="fontsizes-header" bind:value={item.elemento.fontsize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
                           <option value="">{dictionary.select}</option>
                           <option value="5">5</option>
@@ -2589,7 +2691,7 @@
                         <label> 
                           <p>{dictionary.style}:</p>
                           <!-- svelte-ignore a11y-mouse-events-have-key-events -->
-                          <select id="style-select" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFillHeader(e, item.elemento.id)}>  
+                          <select id="style-select_footer" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFillHeader(e, item.elemento.id)}>  
                             <option value="normal"> Default </option>
                             <option value="header" > Header</option>
                             <option value="subheader">SubHeader</option>
@@ -2599,8 +2701,8 @@
                         </label>
                       </div>
                       <div class ="font">
-                        <label for="font">Font:</label>
-                        <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
+                        <label for="font_footer">Font:</label>
+                        <select id="font_footer" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
                             <option value="">{dictionary.select}</option>
                             <option value="Roboto">Roboto</option>
                             <option value="RobotoSerif">RobotoSerif</option>
@@ -2610,7 +2712,7 @@
                         </select>
                       </div>
                       <div class ="fontsize">
-                        <label for="fontsizes"><p>{dictionary.fontsize}:</p></label>
+                        <label for="fontsizes-footer"><p>{dictionary.fontsize}:</p></label>
                         <select id="fontsizes-footer" bind:value={item.elemento.fontsize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
                             <option value="">{dictionary.select}</option>
                             <option value="5">5</option>
@@ -2652,18 +2754,24 @@
                         {dictionary.right}:
                         <input type="number" bind:value={item.elemento.margin.right} min="20" max = "595"/> 
                       </label>
-                      <!--<label>
-                        Sopra:
-                        <input type="number" bind:value={item.elemento.margin.top} min="0" max = {topMarginValue -15} on:change={(e) => ChangeFontsizeonMarginFooter()}/> 
-                      </label>-->
                       <label>
+                        {dictionary.top}:
+                        <input type="number" bind:value={item.elemento.margin.top} min="0" max = {bottomMarginValue -15} /> 
+                      </label>
+                      <!--<label>
                         {dictionary.bottom}:
                         <input type="number" bind:value={item.elemento.margin.bottom} min="20" max = {bottomMarginValue -15}/> 
-                      </label>
+                      </label>-->
                     </div>
                     <div class = "preview_height">
                       <p>{dictionary.words_preview}:</p>
                       <input type="number" bind:value = {item.elemento.test_text} min="1" /> 
+                    </div>
+                    <div class = "page_counter">
+                      <label>
+                        <input type="checkbox" bind:checked={item.elemento.page_counter} value = false />
+                        {dictionary.page_counter}     <small-grey>({dictionary.page_counter_info})</small-grey>
+                    </label>
                     </div>
                   </div>
                 </div>
@@ -2689,7 +2797,7 @@
                           <label> 
                             <p>{dictionary.style}:</p>
                             <!-- svelte-ignore a11y-mouse-events-have-key-events -->
-                            <select id="style-select" bind:value={item.elemento.selectedstyle} name="style-option" on:change={(e) => ChangeFontandFill(e, item.elemento.id)}>  
+                            <select id="style-select_field" bind:value={item.elemento.selectedstyle} name="style-option" on:change={(e) => ChangeFontandFill(e, item.elemento.id)}>  
                               <option value="normal"> Default </option>
                               <option value="header" > Header</option>
                               <option value="subheader">SubHeader</option>
@@ -2952,10 +3060,11 @@
                             <h2>{dictionary.label_column} {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>{dictionary.button_remove_column}</button>
                           </div>  
                           <div class="svg-element">
-                            <div class = "placeHolderSVG"> {field.imgContent}</div>
-                            <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
+                            <!--<div class = "placeHolderSVG"> {field.imgContent}</div>-->
+                            <!--<div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />-->
                             <!-- svelte-ignore missing-declaration -->
-                            <input  class = "custom-file-input" type="file" accept=".jpg , .png" on:change={handleFileIMGChange(event,field.id)} />
+                            <!--<input  class = "custom-file-input" type="file" accept=".jpg , .png" on:change={handleFileIMGChange(event,field.id)} />-->
+                            <textarea class="autosize-textarea dropzone_Text drop2" bind:value={field.imgContent} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                             <h2>{dictionary.dimensions}:</h2>
                             <div class = "dimensioni_svg">
                               <label2>
@@ -3025,10 +3134,11 @@
                             <h2>{dictionary.label_column} {x+1}</h2><button class = "rimuovi" type="button" on:click={() => removeFieldFromColumn(item.elemento.id,field.id)}>{dictionary.button_remove_column}</button>
                           </div>  
                           <div class="svg-element">
-                            <div class = "placeHolderSVG"> {field.imgContent}</div>
-                            <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
+                            <!--<div class = "placeHolderSVG"> {field.imgContent}</div>-->
+                            <!---<div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />-->
                             <!-- svelte-ignore missing-declaration -->
-                            <input  class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,field.id)} />
+                            <!-- <input  class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,field.id)} />-->
+                            <textarea class="autosize-textarea dropzone_Text drop2" bind:value={field.imgContent} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropSVG_IMG_COLUMN(e,item.elemento.id,field.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                             <h2>{dictionary.dimensions}:</h2>
                             <div class = "dimensioni_svg">
                               <label2>
@@ -3095,9 +3205,9 @@
                       {/if}
                       {/each}
                     <div class ="bottonicolonne">
-                      <button type="button" on:click={() => addFieldtoColumn(item.elemento.id)}>{dictionary.add_text}</button>
-                      <button type="button" on:click={() => addIMGtoColumn(item.elemento.id)}>{dictionary.add_img}</button>
-                      <button type="button" on:click={() => addSVGtoColumn(item.elemento.id)}>{dictionary.add_svg}</button>
+                      <button class = "bottonecolonna" type="button" on:click={() => addFieldtoColumn(item.elemento.id)}>{dictionary.add_text}</button>
+                      <button class = "bottonecolonna" type="button" on:click={() => addIMGtoColumn(item.elemento.id)}>{dictionary.add_img}</button>
+                      <button class = "bottonecolonna" type="button" on:click={() => addSVGtoColumn(item.elemento.id)}>{dictionary.add_svg}</button>
                     </div>
                   </div>
                 <div class="dropzone upper-dropzone" on:dragenter={(e) => handleDragEnter(e, i)} on:dragleave={handleDragLeave} on:drop={(e) => handleDrop(e, i)} on:dragover={handleDragOver} id="drop_zone"></div>
@@ -3113,7 +3223,7 @@
                   <div class = "layout">
                     <label>
                       <input type="radio" bind:group={item.elemento.layout} value="Custom" on:change = {HandleChangeLayoutTab(event,item.elemento.id)} />
-                      {dictionary.custom}
+                      {dictionary.border}
                     </label>
                     <label>
                       <input type="radio" bind:group={item.elemento.layout} value="noBorders" on:change = {HandleChangeLayoutTab(event,item.elemento.id)}/>
@@ -3345,6 +3455,9 @@
                       {#if field.type === "campo"}
                       <div class ="altezza">
                         <label>
+                          {dictionary.height_table}:
+                        </label>
+                        <label>
                           <input type="radio" bind:group={field.tipoaltezza_riga} value="auto" on:change={HandleChangeAltezzaColonna(event,field.id)} />
                           {dictionary.auto_height}
                         </label>
@@ -3353,12 +3466,16 @@
                           <p>{dictionary.height} :</p>
                           <input id = {field.id} class="altezza_colonna" type="number" bind:value={field.altezza_riga} min = 2 disabled>
                         </label>
-                        <div class = "colore_tabella">
-                          <label class ="label3"> 
-                            {dictionary.table_color}
-                            <input type="color" bind:value={item.elemento.color}/> 
-                          </label>
-                        </div>
+                      </div>
+                      <div class = "colore_tabella">
+                        <label class ="label3"> 
+                          {dictionary.table_ch_color}
+                          <input type="color" bind:value={item.elemento.color}/> 
+                        </label>
+                        <label class ="label3"> 
+                          {dictionary.table_bg_color}
+                          <input type="color" bind:value={item.elemento.bgcolor}/> 
+                        </label>
                       </div>
                       {dictionary.attributes}
                       <div class = "attributes&addcolonna">
@@ -3489,8 +3606,8 @@
                       <label> 
                         <p>{dictionary.style}:</p>
                         <!-- svelte-ignore a11y-mouse-events-have-key-events -->
-                        <select id="style-select" bind:value={item.elemento.style} name="style-option">  
-                          <option value="" disabled> Default </option>
+                        <select id="style-select_list" bind:value={item.elemento.style} name="style-option">  
+                          <option value="normal" > Default </option>
                           <option value="header" > Header</option>
                           <option value="subheader">SubHeader</option>
                           <option value="quote">Quote</option>
@@ -3510,6 +3627,51 @@
                       </label>
                     </div>
                   </div>
+                  <div class = "f&f_size">
+                    <div class ="font">
+                      <label for="font">Font:</label>
+                      <select id="font" bind:value={item.elemento.font}  on:change={(e) => handleChangeFont(e, item.elemento.id)}>
+                          <option value="">{dictionary.select}</option>
+                          <option value="Roboto">Roboto</option>
+                          <option value="RobotoSerif">RobotoSerif</option>
+                          <option value="Raleway">Raleway</option>
+                          <option value="NotoSerif">NotoSerif</option>
+                          <option value="Montserrat">Montserrat</option>
+                      </select>
+                    </div>
+                    <div class ="fontsize">
+                      <label for="fontsizes"><p>{dictionary.fontsize}:</p></label>
+                      <select id="fontsizes" bind:value={item.elemento.fontsize}  on:change={(e) => handleChangeFontSize(e, item.elemento.id)}>
+                          <option value="">{dictionary.select}</option>
+                          <option value="5">5</option>
+                          <option value="6">6</option>
+                          <option value="7">7</option>
+                          <option value="8">8</option>
+                          <option value="9">9</option>
+                          <option value="10">10</option>
+                          <option value="11">11</option>
+                          <option value="12">12</option>
+                          <option value="13">13</option>
+                          <option value="14">14</option>
+                          <option value="15">15</option>
+                          <option value="16">16</option>
+                          <option value="17">17</option>
+                          <option value="18">18</option>
+                          <option value="19">19</option>
+                          <option value="20">20</option>
+                          <option value="21">21</option>
+                          <option value="22">22</option>
+                          <option value="23">23</option>
+                          <option value="24">24</option>
+                          <option value="25">25</option>
+                          <option value="26">26</option>
+                          <option value="27">27</option>
+                          <option value="28">28</option>
+                          <option value="29">29</option>
+                          <option value="30">30</option>
+                      </select>
+                    </div>
+                  </div>
                   <div class = "ordine">
                     <div class = "list_left1">
                       <label>
@@ -3525,22 +3687,22 @@
                     </div>
                   </div>
                   <div class = "stileNumeri">
-                    <div class = "list_left">
+                    <div class = "list_left_cont">
                       <div class = {"list_left"  + item.elemento.id}>
                         <label>
-                          <input class = "style_index_list" type="radio" bind:group={item.elemento.pointer} value="" />
+                          <input class = {"style_index_list" + item.elemento.id} type="radio" bind:group={item.elemento.pointer} value="numbers" />
                           {dictionary.numbers}
                         </label>
                         <label>
-                          <input class = "style_index_list" type="radio" bind:group={item.elemento.pointer} value="lower-roman" />
+                          <input class = {"style_index_list" + item.elemento.id} type="radio" bind:group={item.elemento.pointer} value="lower-roman" />
                           {dictionary.numbers_roman_small}
                         </label>
                         <label>
-                          <input class = "style_index_list" type="radio" bind:group={item.elemento.pointer} value="lower-alpha" />
+                          <input class = {"style_index_list" + item.elemento.id} type="radio" bind:group={item.elemento.pointer} value="lower-alpha" />
                           {dictionary.letters_small}
                         </label>
                         <label>
-                          <input class = "style_index_list" type="radio" bind:group={item.elemento.pointer} value="upper-roman" />
+                          <input class = {"style_index_list" + item.elemento.id} type="radio" bind:group={item.elemento.pointer} value="upper-roman" />
                           {dictionary.numbers_roman_big}
                         </label>
                         <label>
@@ -3549,7 +3711,7 @@
                         </label>
                       </div>
                     </div>
-                    <div class = "list_right">
+                    <div class = "list_right_cont">
                       <div class = {"list_right"  + item.elemento.id}>
                         <label>
                           <input class = {"style_pointer_list" + item.elemento.id} type="radio" bind:group={item.elemento.pointer} value="circle" />
@@ -3586,10 +3748,11 @@
                   <h1>{dictionary.label_svg} </h1>  <button class = "rimuovi" type="button" on:click={() => removeSVG(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
                 <div class="svg-element">
-                  <div class = "placeHolderSVG"> {item.elemento.svgContent}</div>
-                  <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG(e,item.elemento.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
+                  <!--<div class = "placeHolderSVG"> {item.elemento.svgContent}</div>-->
+                  <!--<div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG(e,item.elemento.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />-->
                   <!-- svelte-ignore missing-declaration -->       
-                    <input class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,item.elemento.id)} />
+                    <!--<input class = "custom-file-input" type="file" accept=".svg" on:change={handleFileSVGChange(event,item.elemento.id)} />-->
+                    <textarea class="autosize-textarea dropzone_Text drop2" bind:value={item.elemento.svgContent} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} /> 
                   <h2>{dictionary.dimensions}:</h2>
                   <div class = "dimensioni_svg">
                     <label2>
@@ -3661,10 +3824,11 @@
                   <h1>{dictionary.label_image} </h1> <button class = "rimuovi" type="button" on:click={() => removeIMG(item.elemento.id)}>{dictionary.button_remove}</button>
                 </div>
                 <div class="svg-element">
-                  <div class = "placeHolderSVG"> {item.elemento.imgContent}</div>
-                  <div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG(e,item.elemento.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
+                  <!--<div class = "placeHolderSVG"> {item.elemento.imgContent}</div>-->
+                  <!--<div class="svgArea dropzone_Text" on:drop={(e) => handleDropSVG(e,item.elemento.id)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />-->
                   <!-- svelte-ignore missing-declaration -->
-                  <input  class = "custom-file-input" type="file" accept=".jpeg , .png" on:change={handleFileIMGChange(event,item.elemento.id)} />
+                  <!--<input  class = "custom-file-input" type="file" accept=".jpeg , .png" on:change={handleFileIMGChange(event,item.elemento.id)} />-->
+                  <textarea class="autosize-textarea dropzone_Text drop2" bind:value={item.elemento.imgContent} on:input={handleInput} on:input:resize={adjustTextareaHeight} on:drop={(e) => handleDropFile(e,item.elemento.id,0,0)}  on:dragover={handleDragOverText} on:dragenter={handleDragEnterText} on:dragleave={handleDragLeave} />
                   <h2>{dictionary.dimensions}:</h2>
                   <div class = "dimensioni_svg">
                     <label2>
@@ -3700,7 +3864,7 @@
                       </div>
                     </div>
                     <div class = "posizione">
-                      <p>{dictionary.alignemnt}: </p>
+                      <p>{dictionary.alignment}: </p>
                       <label> 
                         <input type="radio" bind:group={item.elemento.alignment} value="left"/> 
                         {dictionary.left}
@@ -3798,8 +3962,8 @@
                           <label> 
                             <p>{dictionary.style}:</p>
                             <!-- svelte-ignore a11y-mouse-events-have-key-events -->
-                            <select id="style-select" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFill(e, item.elemento.id)}>  
-                              <option value="" > Default </option>
+                            <select id="style-select_toc" bind:value={item.elemento.style} name="style-option" on:change={(e) => ChangeFontandFill(e, item.elemento.id)}>  
+                              <option value="normal" > Default </option>
                               <option value="header" > Header</option>
                               <option value="subheader">SubHeader</option>
                               <option value="quote">Quote</option>
@@ -3812,15 +3976,15 @@
                         <div class = "pbreak">
                           {dictionary.page_break}:
                           <label>
-                            <input type="radio" bind:group={item.elemento.pagebreak} value="before" />
+                            <input type="radio" bind:group={item.elemento.pageBreak} value="before" />
                             {dictionary.before}
                           </label>
                           <label>
-                            <input type="radio" bind:group={item.elemento.pagebreak} value="after" />
+                            <input type="radio" bind:group={item.elemento.pageBreak} value="after" />
                             {dictionary.after}
                           </label>
                           <label>
-                            <input type="radio" bind:group={item.elemento.pagebreak} value="" />
+                            <input type="radio" bind:group={item.elemento.pageBreak} value="" />
                             {dictionary.none}
                           </label>
                         </div>  
@@ -4135,7 +4299,8 @@
           grid-template-columns: 30% 35% 35%;
       }
       .colore_tabella {
-          align-self: center;
+        display: grid;
+      grid-template-columns: 50% 50%;
       }
       small-grey {
           color: #a5a5a5;
@@ -4154,7 +4319,7 @@
           flex-direction: column;
           /* background: #d4e7e1; */
           /* padding: 5px; */
-          gap: 10px;
+          gap: 20px;
       }
       .attributi_colonne {
           display: grid;
@@ -4193,6 +4358,9 @@
           flex-direction: column;
           gap: 20px;
       }
+      select#default_font {
+        margin-left: 50px;
+      }
       .list_left1 {
           border: 1px solid #cfcfcf;
           width: 90%;
@@ -4200,6 +4368,9 @@
           border-radius: 50px;
           justify-self: center;
           /* margin-right: 0px; */
+      }
+      .deafult_font {
+          margin-top: 25px;
       }
 
       .list-right1 {
@@ -4252,7 +4423,7 @@
           display: grid;
           grid-template-columns: 50% 50%;
       }
-      .list_left {
+      .list_left_cont {
           display: grid;
           /* grid-template-columns: 50% 50%; */
           row-gap: 10px;
