@@ -147,6 +147,7 @@
   //-------------------intialize doc definition ----------------------------------
     let pdfData = null;
     let dd = {};
+    window.dd = dd;
     ddStore.set(dd);
     pdfMake.createPdf(dd).getDataUrl((dataUrl) => {
       pdfData = dataUrl;
@@ -205,7 +206,7 @@
       contenuto.forEach(item => {
         if (item.type === 'field') {
           var testo = item.elemento.content;
-          testo = testo.concat("\n");
+          var testo2 = testo.concat("\n");
           const font = item.elemento.selectedfont || 'Roboto';
           const fontSize = item.elemento.selectedfontsize || 12;
           const style = item.elemento.selectedstyle || 'normal';
@@ -213,8 +214,14 @@
           const tocItem = item.elemento.tocItem;
           const test_text = item.elemento.test_text || "40";
           var text_generated = generateText(test_text.toString()); 
+          var text_preview;
+          if (testo.startsWith("$") || testo === ""){
+            text_preview = text_generated;
+          } else {
+            text_preview = testo2;
+          }
           dd.content.push({
-            text: testo,
+            text: testo2,
             fontSize: fontSize,
             style: style,
             font: font,
@@ -224,7 +231,7 @@
             tocItem : tocItem
           });
           dd_preview.content.push({
-            text: text_generated,
+            text: text_preview,
             fontSize: fontSize,
             style: style,
             font: font,
@@ -256,6 +263,12 @@
               const style = field.selectedstyle || 'normal';
               const test_text = field.test_text || "4";
               var text_generated = generateText(test_text.toString()); 
+              var text_preview;
+              if (contenuto.startsWith("$")|| contenuto === ""){
+                text_preview = text_generated;
+              } else {
+                text_preview = contenuto;
+              }
               ris.push({
                   width: width,
                   text: contenuto,
@@ -267,7 +280,7 @@
               });
               ris_preview.push({
                   width: width,
-                  text: text_generated,
+                  text: text_preview,
                   fontSize: fontSize,
                   style: style,
                   font: font,
@@ -415,6 +428,12 @@
                 } else {
                   bgcolor1 = bgcolor;
                 };
+                var text_preview;
+                if (testo.startsWith("$")|| testo === ""){
+                  text_preview = text_generated;
+                } else {
+                  text_preview = testo;
+                }
                 riga.push({
                   border : borders,
                   fillColor: bgcolor1,
@@ -427,7 +446,7 @@
                   fillColor: bgcolor1,
                   alignment : alignment,
                   colSpan: colspan,
-                  text : text_generated,
+                  text : text_preview,
                 });
               }
             } else if (el.type === "contenuto_campi") {
@@ -455,6 +474,12 @@
                 } else {
                   bgcolor2 = bgcolor;
                 };
+                var text_preview;
+                if (testo.startsWith("$")|| testo === ""){
+                  text_preview = text_generated;
+                } else {
+                  text_preview = testo;
+                }
                 riga.push({
                   border : borders,
                   fillColor: bgcolor2,
@@ -467,7 +492,7 @@
                   fillColor: bgcolor2,
                   alignment : alignment,
                   colSpan: colspan,
-                  text : text_generated,
+                  text : text_preview,
                 });
                 console.log("riga");
                 console.log(riga);
@@ -517,10 +542,17 @@
           const lista = [];
           const lista_preview = [];
           item.elemento.testo.forEach(el=>{
-            lista.push(el.content);
+            var testo = el.content;
+            lista.push(testo);
             const test_text = el.test_text || "10";
-            var text_generated = generateText(test_text.toString()); 
-            lista_preview.push(text_generated);
+            var text_generated = generateText(test_text.toString());
+            var text_preview;
+            if (testo.startsWith("$")|| testo === ""){
+              text_preview = text_generated;
+            } else {
+              text_preview = testo;
+            } 
+            lista_preview.push(text_preview);
           });
           if (tipo === "ul"){
             dd.content.push({
@@ -581,11 +613,17 @@
           margin_preview.push(item.elemento.margin.top);
           margin_preview.push(item.elemento.margin.right);
           margin_preview.push(item.elemento.margin.bottom);
+          var text_preview;
+          if (testo.startsWith("$")|| testo === ""){
+            text_preview = text_generated;
+          } else {
+            text_preview = testo;
+          }
           dd.header.text = testo;
           dd.header.alignment = alignment;
           dd.header.style = style;
           dd.header.margin = margin;
-          dd_preview.header.text = text_generated;
+          dd_preview.header.text = text_preview;
           dd_preview.header.alignment = alignment;
           dd_preview.header.style = style;
           dd_preview.header.margin = margin_preview;
@@ -615,6 +653,12 @@
             }
           if (fontsize === ""){
             fontsize = 12;
+          }
+          var text_preview;
+          if (testo.startsWith("$")|| testo === ""){
+            text_preview = text_generated;
+          } else {
+            text_preview = testo;
           }
           margin.push(item.elemento.margin.left);
           margin.push(item.elemento.margin.top);
@@ -650,7 +694,7 @@
             dd.footer.alignment = alignment;
             dd.footer.style = style;
             dd.footer.margin = margin;
-            dd_preview.footer.text = text_generated;
+            dd_preview.footer.text = text_preview;
             dd_preview.footer.alignment = alignment;
             dd_preview.footer.style = style;
             dd_preview.footer.margin = margin_preview;
@@ -692,7 +736,7 @@
               alignment : alignment,
               margin : svgMargins
             });
-            dd.content.push({
+            dd_preview.content.push({
               svg: test_svg,
               width:larghezza,
               height: altezza,
@@ -750,6 +794,12 @@
           const bold = item.elemento.bold;
           const italics = item.elemento.italics;
           const font = item.elemento.font || "Roboto";
+          var text_preview;
+          if (text.startsWith("$")|| text === ""){
+            text_preview = text_generated;
+          } else {
+            text_preview = text;
+          }
           dd.content.push({
             toc : {
               id : id_sec,
@@ -768,7 +818,7 @@
             toc : {
               id : id_sec,
               title : {
-                text : text_generated,
+                text : text_preview,
                 style : style,
                 fontSize : fontSize,
                 pageBreak : pageBreak,
@@ -802,6 +852,7 @@
         //generatedPdfData = pdfMake.createPdf(dd).getDataUrl;
         //pdfMake.createPdf(dd).download();
         ddStore.set(dd);
+        window.dd = dd;
         const unsubscribe = ddStore.subscribe((value) => {
           console.log('Stored value in PDFstore:', value);
         });
@@ -3771,7 +3822,7 @@
                         </label7>
                       </div>
                     </div>
-                    <label2>
+                    <!--<label2>
                       <input type= "radio" bind:group={item.elemento.isMaxDimensionsSelected} on:change={handleDimensionChange_SVG(event,item.elemento.id)} value = "false">
                       {dictionary.abs_dimensions}<small-grey2>({dictionary.abs_expl})</small-grey2>
                     </label2>
@@ -3786,7 +3837,7 @@
                           <input type = "number" bind:value = {item.elemento.altezza} min = 10 max = 841>
                         </label7>
                       </div>
-                    </div>
+                    </div>-->
                     <div class = "posizione">
                       <p>{dictionary.alignment}: </p>
                       <label> 
@@ -4291,7 +4342,7 @@
           /* flex-direction: column; */
           /* background: #acb9ff; */
           /* padding: 5px; */
-          grid-template-columns: 30% 25% 35%;
+          grid-template-columns: 40% 40%;
           justify-content: space-between;
       }
       .altezza {
@@ -4658,6 +4709,9 @@
           /*width: 700px;*/
           height: 100%;
           max-height: 100%;
+          height: 100%;
+          overflow: hidden;
+          position: relative;
       }
       button.preview {
           position: fixed;
@@ -4681,7 +4735,19 @@
           /*min-width: 400px;*/
           /*top: 10px;*/
           /*bottom: 10px;*/
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border: none;
       }
+      .preview iframe pdf {
+          width: 100%;
+          height: 100%;
+          transform: scale(1); /* Adjust the scale factor as needed */
+          transform-origin: 0 0; /* Set the origin to the top-left corner */
+        }
       .resize-handle {
           position: absolute;
           bottom: 0;

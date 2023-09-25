@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/experimental-ct-svelte';
 import App from './MainPDFMake.svelte';
 import { skip } from 'node:test';
 import { Textarea } from '@smui/textfield';
+import pdfMake from 'pdfmake/build/pdfmake.js';
+import pdfFonts from "../public/vfs_fonts.js";
+pdfMake.vfs = pdfFonts;
 
 test.describe('Svelte App Tests', () => {
   let page;
@@ -181,6 +184,224 @@ test.describe('Svelte App Tests', () => {
       }
     }
 });
+
+
+test('Check if clicking "crea" generates a PDF without errors', async ({ page }) => {
+  await page.goto('http://localhost:8080');
+
+  // Click all the clickable buttons except those with text "Indice"
+  const clickableButtons = await page.$$('.addButton');
+  for (const clickableButton of clickableButtons) {
+    const buttonText = await clickableButton.textContent();
+    if (buttonText?.trim() === "Indice") {
+      continue;
+    } else {
+      console.log(`Clicked button: ${buttonText}`);
+      await clickableButton.click();
+    }
+  }
+
+  // Click the "crea" button to trigger the handleSubmit function
+  await page.click('button:has-text("Crea")');
+  await page.waitForTimeout(1000); // Wait for any asynchronous changes to settle
+
+  // Access the global 'dd' variable after it has been modified by handleSubmit
+  const dd = await page.evaluate(() => window.dd);
+  console.log("dd = ",dd);
+
+  // Define a function to generate PDF from 'dd' and capture any potential errors
+  async function generatePdfWithoutErrors(dd) {
+    // Check if 'dd' is an object
+    if (typeof dd !== 'object') {
+      return "dd is not an object";
+    }
+
+    // Check for 'content', 'styles', 'pageMargins', 'header', and 'footer'
+    if (!dd.content || !dd.styles || !dd.pageMargins) {
+      return "Missing required fields in dd";
+    }
+
+    if (dd.pageMargins.length !== 4) {
+      return "pageMargins should have 4 values";
+    }
+
+    if (dd.header) {
+      if (
+        typeof dd.header.text !== 'string' ||
+        typeof dd.header.alignment !== 'string' ||
+        typeof dd.header.style !== 'string' ||
+        typeof dd.header.fontSize !== 'number' ||
+        typeof dd.header.font !== 'string' ||
+        !Array.isArray(dd.header.margin) ||
+        dd.header.margin.length !== 4
+      ) {
+        return "Invalid header properties";
+      }
+    }
+
+    if (dd.footer) {
+      if (
+        typeof dd.footer.text !== 'string' ||
+        typeof dd.footer.alignment !== 'string' ||
+        typeof dd.footer.style !== 'string' ||
+        typeof dd.footer.fontSize !== 'number' ||
+        typeof dd.footer.font !== 'string' ||
+        !Array.isArray(dd.footer.margin) ||
+        dd.footer.margin.length !== 4
+      ) {
+        return "Invalid footer properties";
+      }
+    }
+
+    // Check the structure of elements inside 'content' array
+    if (Array.isArray(dd.content)) {
+      for (const element of dd.content) {
+        if (
+          typeof element.text === "string" &&
+          typeof element.style === "string" &&
+          ['before', 'after', ''].includes(element.pageBreak) &&
+          [true, false, ''].includes(element.italics) &&
+          typeof element.fontSize === 'number' &&
+          typeof element.font === "string" &&
+          [true, false, ''].includes(element.bold) &&
+          typeof element.tocItem === "string"
+        ) {
+          // Valid element inside 'content' array
+        } else if (
+          element.text === " "
+        ) {
+          // Valid element inside 'content' array
+        }/* else if (
+          element.toc &&
+          element.toc.id &&
+          element.toc.title &&
+          element.toc.title.text &&
+          element.toc.title.style &&
+          ['before', 'after', ''].includes(element.toc.title.pageBreak) &&
+          [true, false, ''].includes(element.toc.title.italics) &&
+          typeof element.toc.title.fontSize === 'number' &&
+          element.toc.title.font &&
+          [true, false, ''].includes(element.toc.title.bold)
+        ) {
+          // Valid element inside 'content' array
+        }*/  else if (element.table) {
+          typeof element.color === "string" &&
+          ['before', 'after', ''].includes(element.pageBreak) &&
+          [true, false, ''].includes(element.italics) &&
+          typeof element.fontSize === 'number' &&
+          typeof element.font === "string" &&
+          [true, false, ''].includes(element.bold) &&
+          typeof element.layout === "string"
+          // Check the structure of the 'table' property
+          const { table } = element;
+          if (
+            Array.isArray(table.heights) &&
+            Array.isArray(table.widths) &&
+            Array.isArray(table.body)
+          ) {
+            // Valid table structure
+          } else {
+            return "Invalid properties in table element";
+          }
+        } else if (element.ul) {
+          // Check the structure of unordered list ('ul')
+          if (Array.isArray(element.ul)) {
+            if (element.ul.length != 0){
+              for (const listItem of element.ul) {
+                if (typeof listItem.text === "string") {
+                  // Valid unordered list item
+                } else {
+                  return "Invalid properties in unordered list item";
+                }
+              }
+            }
+          } else {
+            return "Invalid properties in unordered list ('ul')";
+          }
+        } else if (element.ol) {
+          // Check the structure of ordered list ('ol')
+          if (Array.isArray(element.ol)) {
+            if (element.ol.length != 0){
+              for (const listItem of element.ol) {
+                if (typeof listItem.text === "string") {
+                  // Valid ordered list item
+                } else {
+                  return "Invalid properties in ordered list item";
+                }
+              }
+            }
+          } else {
+            return "Invalid properties in ordered list ('ol')";
+          }
+        }else if (
+          typeof element.alignment === "string" &&
+          typeof element.columnGap === 'number' &&
+          Array.isArray(element.columns)
+        ) {
+          // Check the structure of 'columns' array
+          for (const column of element.columns) {
+            if (
+              typeof column.text === "string" &&
+              typeof column.style === "string" &&
+              [true, false, ''].includes(column.italics) &&
+              typeof column.fontSize === 'number' &&
+              typeof column.font === "string" &&
+              [true, false, ''].includes(column.bold) &&
+              (typeof column.width === 'number' || typeof column.width === 'string')
+            ) {
+              // Valid column element inside 'columns' array
+            } else if (
+              typeof column.image === "string" &&
+              typeof column.alignment  === "string" &&
+              Array.isArray(column.fit) && column.fit.length == 2 &&
+              Array.isArray(column.margin) && column.margin.length == 4
+            ) {
+              // Valid column element inside 'columns' array
+            }else if (
+              typeof column.svg === "string" &&
+              typeof column.alignment  === "string"&&
+              Array.isArray(column.fit) && column.fit.length == 2 &&
+              Array.isArray(column.margin) && column.margin.length == 4
+            ) {
+              // Valid column element inside 'columns' array
+            } else {
+              return "Invalid properties in column element";
+            }
+          }
+        } else if (
+          typeof element.image === "string" &&
+          typeof element.alignment === "string" &&
+          Array.isArray(element.fit) && element.fit.length == 2 &&
+          Array.isArray(element.margin) && element.margin.length == 4
+        ){
+          //Valid
+        } else if (
+          typeof element.svg === "string" &&
+          typeof element.alignment === "string" &&
+          Array.isArray(element.fit) && element.fit.length == 2 &&
+          Array.isArray(element.margin) && element.margin.length == 4
+        ){
+          //Valid
+        }else {
+          return "Invalid properties in content element"+element[0];
+        }
+      }
+    } else {
+      return "Content should be an array";
+    }
+
+    // If all checks pass, return null to indicate no errors
+    return null;
+  }
+
+  // Generate the PDF from the modified 'dd' and capture any errors
+  const pdfGenerationError = await page.evaluate(generatePdfWithoutErrors, dd);
+
+  // Use Playwright's expect to assert that there were no errors during PDF generation
+  expect(pdfGenerationError).toBeNull();
+});
+
+
   
   test('should work', async ({ mount }) => {
     const component = await mount(App);
